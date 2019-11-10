@@ -16,9 +16,10 @@ This is a minimal implementation to support micro:bit. Some of Scratch-link
 features are not implemented. For example, Bluetooth (non-BLE) devices are not
 supported. BLE device support other than micro:bit is not confirmed.
 
-Bluepy-scratch-link is for python 3 and do not work for python 2. If your Linux
-system has explicit command names python3 and pip3, use them in the instructions
-below.
+Bluepy-scratch-link requires python version 3.6 and later to use websockets.
+If your system has python older than version 3.6, install newer version. If your
+Linux system has explicit command names python3 and pip3 for python version 3,
+use them in the instructions below.
 
 The instructions below was confirmed with elementary OS 5.0 Juno which is
 based on Ubuntu 18.04 LTS and Arch Linux. Trial with other distros and
