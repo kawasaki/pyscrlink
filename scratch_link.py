@@ -195,7 +195,7 @@ class BLESession(Session):
             self.perip.disconnect()
 
     def __del__(self):
-        close(self)
+        self.close()
 
     def matches(self, dev, filters):
         """
