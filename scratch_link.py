@@ -206,7 +206,7 @@ class BLESession(Session):
             if 'services' in f:
                 for s in f['services']:
                     logger.debug(f"sevice to check: {s}")
-                    given_uuid = UUID(int(s))
+                    given_uuid = s
                     logger.debug(f"given: {given_uuid}")
                     service_class_uuid = dev.getValueText(0x3)
                     if not service_class_uuid:
