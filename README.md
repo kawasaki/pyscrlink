@@ -93,13 +93,13 @@ Usage
     $ sudo python3 ./scratch_link.py
     ```
 
-3. Start Firefox and allow local server certificate
-    * Open firefox and open [https://device-manager.scratch.mit.edu:20110/](https://device-manager.scratch.mit.edu:20110/). You will see security risk warning.
-    * Click "Advanced" and click "Accept Risk and Continue". Your will see
-      "Failed to open a WebSocket connection". This is expected.
+3. Start Firefox or Chrome and allow local server certificate
     * This action is required only the first time to access.
-    * Note: it is not known how to allow Chrome to accept self signed
-      certificate.
+    * Open Firefox or Chrome and open [https://device-manager.scratch.mit.edu:20110/](https://device-manager.scratch.mit.edu:20110/). You will see a security risk warning.
+    * In **Firefox**: Click "Advanced" and click "Accept Risk and Continue".
+    * In **Chrome**: type the special bypass keyword `thisisunsafe`.
+    * Immediately, you will see "Failed to open a WebSocket connection". This is expected.
+
 
 4. Connect scratch to micro:bit
     * Open [Scratch 3.0](https://scratch.mit.edu/)
