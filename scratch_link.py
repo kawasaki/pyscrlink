@@ -109,6 +109,9 @@ class BLESession(Session):
     CONNECTED = 3
     DONE = 4
 
+    ADTYPE_COMP_16B = 0x3
+    ADTYPE_COMP_128B = 0x7
+
     class BLEThread(threading.Thread):
         """
         Separated thread to control notifications to Scratch.
@@ -208,9 +211,13 @@ class BLESession(Session):
                     logger.debug(f"sevice to check: {s}")
                     given_uuid = s
                     logger.debug(f"given: {given_uuid}")
-                    service_class_uuid = dev.getValueText(0x3)
+                    service_class_uuid = dev.getValueText(self.ADTYPE_COMP_128B)
+                    logger.debug(f"adtype 128b: {service_class_uuid}")
                     if not service_class_uuid:
-                        continue
+                        service_class_uuid = dev.getValueText(self.ADTYPE_COMP_16B)
+                        logger.debug(f"adtype 16b: {service_class_uuid}")
+                        if not service_class_uuid:
+                            continue
                     dev_uuid = UUID(service_class_uuid)
                     logger.debug(f"dev: {dev_uuid}")
                     logger.debug(given_uuid == dev_uuid)
