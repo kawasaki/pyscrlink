@@ -515,6 +515,13 @@ class BLESession(Session):
             if params.get('startNotifications') == True:
                 self.startNotifications(service_id, chara_id)
 
+        elif self.status == self.CONNECTED and method == 'startNotifications':
+            logger.debug("handle startNotifications request")
+            service_id = params['serviceId']
+            chara_id = params['characteristicId']
+            charas = self.perip.getCharacteristics(uuid=chara_id)
+            self.startNotifications(service_id, chara_id)
+
         elif self.status == self.CONNECTED and method == 'write':
             logger.debug("handle write request")
             service_id = params['serviceId']
