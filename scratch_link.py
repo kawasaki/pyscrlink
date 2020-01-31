@@ -552,8 +552,7 @@ class BLESession(Session):
         logger.debug(res)
         return res
 
-    def startNotifications(self, service_id, chara_id):
-        logger.debug(f"start notification for {chara_id}")
+    def setNotifications(self, service_id, chara_id, value):
         service = self.perip.getServiceByUUID(UUID(service_id))
         chas = service.getCharacteristics(forUUID=chara_id)
         handle = chas[0].getHandle()
@@ -561,22 +560,16 @@ class BLESession(Session):
         self.delegate.add_handle(service_id, chara_id, handle)
         # request notification to the BLE device
         self.lock.acquire()
-        self.perip.writeCharacteristic(chas[0].getHandle() + 1,
-                                       b"\x01\x00", True)
+        self.perip.writeCharacteristic(chas[0].getHandle() + 1, value, True)
         self.lock.release()
+
+    def startNotifications(self, service_id, chara_id):
+        logger.debug(f"start notification for {chara_id}")
+        self.setNotifications(service_id, chara_id, b"\x01\x00")
 
     def stopNotifications(self, service_id, chara_id):
         logger.debug(f"stop notification for {chara_id}")
-        service = self.perip.getServiceByUUID(UUID(service_id))
-        chas = service.getCharacteristics(forUUID=chara_id)
-        handle = chas[0].getHandle()
-        # prepare notification handler
-        self.delegate.add_handle(service_id, chara_id, handle)
-        # request notification to the BLE device
-        self.lock.acquire()
-        self.perip.writeCharacteristic(chas[0].getHandle() + 1,
-                                       b"\x00\x00", True)
-        self.lock.release()
+        self.setNotifications(service_id, chara_id, b"\x00\x00")
 
     def end_request(self):
         logger.debug("end_request of BLESession")
