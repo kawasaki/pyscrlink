@@ -37,14 +37,14 @@ Installation
 2. Install Bluez package
     ```sh
     Ubuntu
-    $ sudo apt install bluez
+    $ sudo apt install bluez libbluetooth-dev
     Arch
     $ sudo pacman -S bluez
     ```
 
 3. Install python modules
     ```sh
-    $ sudo pip install bluepy websockets
+    $ sudo pip install bluepy pybluez websockets
     Or if your system has python3 command,
     $ sudo pip3 install bluepy pybluez websockets
     ```
@@ -53,7 +53,7 @@ Installation
    Example below installs bluepy-scratch-link under your home directory.
     ```sh
     $ cd ~
-    $ git clone git@github.com:chrisglencross/bluepy-scratch-link.git
+    $ git clone https://github.com/chrisglencross/bluepy-scratch-link.git
     ```
 
 5. Prepare web server certificate
@@ -91,12 +91,18 @@ Usage
 
    First, turn on the EV3 and ensure Bluetooth is enabled.
  
-   Then, pair using your Linux desktop's the Bluetooth settings, for example with Gnome:  
+   Then, pair using your Linux desktop's the Bluetooth settings.
+   
+   If using Gnome:  
       * Settings -> Bluetooth
       * Click on the EV3 device name
       * Accept the connection on EV3 brick
-      * Enter a matching PIN on EV3 brick and Linux PC
+      * Enter a matching PIN on EV3 brick and Linux PC. '1234' is the value Scratch suggests.
       * Confirm EV3 status is "Disconnected" in Bluetooth settings
+      
+   With a Raspberry Pi default Raspbian desktop, click the Bluetooth logo in the top right of the screen and
+   Add Device. Then follow the Gnome instructions. You will be warned that the Raspberry Pi
+   does not know how to talk to this device; that is not a problem.
       
    Alternatively you can perform pairing from the command-line:
    ```shell script
