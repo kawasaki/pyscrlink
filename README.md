@@ -8,7 +8,7 @@ only on Windows and MacOS, and cannot connect Scratch and micro:bit on Linux.
 
 Bluepy-scratch-link allows Linux PCs to connect Scratch and micro:bit. It uses
 Linux Bluetooth protocol stack [Bluez](http://www.bluez.org/) and its python
-interfaces [pybluez](https://github.com/pybluez/pybluez) to handle Bluetooth, 
+interfaces [pybluez](https://github.com/pybluez/pybluez) to handle Bluetooth,
 and [bluepy](https://github.com/IanHarvey/bluepy) to handle Bluetooth Low
 Energy, or BLE, connections with micro:bit. It is confirmed that
 bluepy-scratch-link connects Scratch 3.0 and a micro:bit, and a Lego Mindstorms
@@ -23,9 +23,18 @@ If your system has python older than version 3.6, install newer version. If your
 Linux system has explicit command names python3 and pip3 for python version 3,
 use them in the instructions below.
 
-The instructions below was confirmed with elementary OS 5.0 Juno which is
-based on Ubuntu 18.04 LTS and Arch Linux. Trial with other distros and
-feed-backs will be appreciated.
+Confirmed devices and distros
+-----------------------------
+The instructions below was confirmed with following devices and distros.
+Trial with other distros and feed-backs will be appreciated.
+
+The bluepy-scratch-link was confirmed with following devices:
+    * micro:bit by @kawasaki
+    * Lego Mindstorm EV3: by @chrisglencross
+The bluepy-scratch-link was confirmed with following Linux distros:
+    * Arch Linux by @kawasaki
+    * elementary OS 5.0 Juno by @kawasaki
+    * Raspbian by @chirsglencross
 
 Installation
 ------------
@@ -53,7 +62,7 @@ Installation
    Example below installs bluepy-scratch-link under your home directory.
     ```sh
     $ cd ~
-    $ git clone https://github.com/chrisglencross/bluepy-scratch-link.git
+    $ git clone https://github.com/kawasaki/bluepy-scratch-link.git
     ```
 
 5. Prepare web server certificate
@@ -86,55 +95,55 @@ Usage
     $ sudo btmgmt le on
     $ sudo btmgmt power on
     ```
-   
-2. For Lego Mindstorms EV3, pair your Linux PC to the EV3 brick. 
+
+2. For Lego Mindstorms EV3, pair your Linux PC to the EV3 brick.
 
    First, turn on the EV3 and ensure Bluetooth is enabled.
- 
+
    Then, pair using your Linux desktop's the Bluetooth settings.
-   
-   If using Gnome:  
+
+   If using Gnome:
       * Settings -> Bluetooth
       * Click on the EV3 device name
       * Accept the connection on EV3 brick
       * Enter a matching PIN on EV3 brick and Linux PC. '1234' is the value Scratch suggests.
       * Confirm EV3 status is "Disconnected" in Bluetooth settings
-      
+
    With a Raspberry Pi default Raspbian desktop, click the Bluetooth logo in the top right of the screen and
    Add Device. Then follow the Gnome instructions. You will be warned that the Raspberry Pi
    does not know how to talk to this device; that is not a problem.
-      
+
    Alternatively you can perform pairing from the command-line:
    ```shell script
    $ bluetoothctl
-   
+
    [bluetooth]# power on
    Changing power on succeeded
-   
+
    [bluetooth]# pairable on
    Changing pairable on succeeded
-   
-   [bluetooth]# agent KeyboardOnly 
+
+   [bluetooth]# agent KeyboardOnly
    Agent registered
-   
+
    [bluetooth]# devices
    ...
    Device 00:16:53:53:D3:19 EV3
    ...
-   
+
    [bluetooth]# pair 00:16:53:53:D3:19
    Attempting to pair with 00:16:53:53:D3:19
-   
+
    # Confirm pairing on the EV3 display, set PIN to 1234
-   
+
    Request PIN code
    [agent] Enter PIN code: 1234
    [CHG] Device 00:16:53:53:D3:19 Connected: yes
    [CHG] Device 00:16:53:53:D3:19 Paired: yes
    Pairing successful
-   
+
    [bluetooth]# quit
-   ``` 
+   ```
 
 3. Start scratch-link python script
     ```sh
