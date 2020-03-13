@@ -29,12 +29,13 @@ The instructions below was confirmed with following devices and distros.
 Trial with other distros and feed-backs will be appreciated.
 
 The bluepy-scratch-link was confirmed with following devices:
-    * micro:bit by @kawasaki
-    * Lego Mindstorm EV3: by @chrisglencross
+* micro:bit by @kawasaki
+* Lego Mindstorm EV3: by @chrisglencross
+
 The bluepy-scratch-link was confirmed with following Linux distros:
-    * Arch Linux by @kawasaki
-    * elementary OS 5.0 Juno by @kawasaki
-    * Raspbian by @chirsglencross
+* Arch Linux by @kawasaki
+* elementary OS 5.0 Juno by @kawasaki
+* Raspbian by @chirsglencross
 
 Installation
 ------------
