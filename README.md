@@ -39,12 +39,14 @@ The bluepy-scratch-link was confirmed with following Linux distros:
 
 Installation
 ------------
-1. Prepare Bluetooth/BLE controller
+1. Prepare Bluetooth/BLE controller.
+
    Confirm that your Linux PC has a Bluetooth controller with BLE support.
    Bluetooth 4.0 controller supports BLE. If your PC does not have it, need
    to plug USB Bluetooth 4.0 adapter.
 
-2. Install Bluez package
+2. Install Bluez package.
+
     ```sh
     Ubuntu
     $ sudo apt install bluez libbluetooth-dev
@@ -52,21 +54,24 @@ Installation
     $ sudo pacman -S bluez
     ```
 
-3. Install python modules
+3. Install python modules.
+
     ```sh
     $ sudo pip install bluepy pybluez websockets
     Or if your system has python3 command,
     $ sudo pip3 install bluepy pybluez websockets
     ```
 
-4. Get bluepy-scratch-link
+4. Get bluepy-scratch-link.
+
    Example below installs bluepy-scratch-link under your home directory.
     ```sh
     $ cd ~
     $ git clone https://github.com/kawasaki/bluepy-scratch-link.git
     ```
 
-5. Prepare web server certificate
+5. Prepare web server certificate.
+
     Scratch-link requires local Secure WebSocket server with certificate.
     Generate and prepare a PEM certificate file.
     ```sh
@@ -74,7 +79,8 @@ Installation
     $ ./gencert.sh
       ```
 
-6. If using a micro:bit, install Scratch-link hex on your device
+6. If using a micro:bit, install Scratch-link hex on your device.
+
     * Download and unzip the [micro:bit Scratch Hex file](https://downloads.scratch.mit.edu/microbit/scratch-microbit-1.1.0.hex.zip).
     * Flash the micro:bit over USB with the Scratch .Hex File, you will see the
       five character name of the micro:bit scroll across the screen such as
