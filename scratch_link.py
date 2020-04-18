@@ -529,8 +529,9 @@ class BLESession(Session):
 
 # kick start WSS server
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-localhost_pem = pathlib.Path(__file__).with_name("scratch-device-manager.pem")
-ssl_context.load_cert_chain(localhost_pem)
+localhost_cer = pathlib.Path(__file__).with_name("scratch-device-manager.cer")
+localhost_key = pathlib.Path(__file__).with_name("scratch-device-manager.key")
+ssl_context.load_cert_chain(localhost_cer, localhost_key)
 sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
 
 async def ws_handler(websocket, path):
