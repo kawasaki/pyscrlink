@@ -23,8 +23,8 @@ If your system has python older than version 3.6, install newer version. If your
 Linux system has explicit command names python3 and pip3 for python version 3,
 use them in the instructions below.
 
-Confirmed devices and distros
------------------------------
+Confirmed Environments
+----------------------
 The instructions below was confirmed with following devices and distros.
 Trial with other distros and feed-backs will be appreciated.
 
@@ -37,6 +37,10 @@ The bluepy-scratch-link was confirmed with following Linux distros:
 * elementary OS 5.0 Juno by @kawasaki
 * Raspbian by @chirsglencross
 
+The bluepy-scratch-link was confirmed with following browsers:
+* FireFox by @kawasaki
+* Chromium by @kawasaki
+
 Installation
 ------------
 1. Prepare Bluetooth/BLE controller.
@@ -45,13 +49,13 @@ Installation
    Bluetooth 4.0 controller supports BLE. If your PC does not have it, need
    to plug USB Bluetooth 4.0 adapter.
 
-2. Install Bluez package.
+2. Install required packages.
 
     ```sh
     Ubuntu
-    $ sudo apt install bluez libbluetooth-dev
+    $ sudo apt install bluez libbluetooth-dev libnss3-tools
     Arch
-    $ sudo pacman -S bluez
+    $ sudo pacman -S bluez nss
     ```
 
 3. Install python modules.
@@ -73,11 +77,22 @@ Installation
 5. Prepare web server certificate.
 
     Scratch-link requires local Secure WebSocket server with certificate.
-    Generate and prepare a PEM certificate file.
+    Run a script to generate the certificate file and corresponding key file.
+    Be sure to run it as the user to run the web browser for Scratch so that
+    the script can add the generated certificate to FireFox or Chrome.
     ```sh
     $ cd ~/bluepy-scratch-link
     $ ./gencert.sh
-      ```
+    Generating a RSA private key
+    ..................................................+++++
+    .....................................................................................+++++
+    writing new private key to 'scratch-device-manager.key'
+    -----
+    Generated certificate: scratch-device-manager.cer
+    Generated key: scratch-device-manager.key
+    Added certificate to FireFox NSS DB: /home/shin/.mozilla/firefox/XXXX.default
+    Added certificate to Chrome
+    ```
 
 6. If using a micro:bit, install Scratch-link hex on your device.
 
@@ -151,16 +166,20 @@ Usage
     $ sudo python3 ./scratch_link.py
     ```
 
-4. Start Firefox or Chrome and allow local server certificate
-    * This action is required only the first time to access.
-    * Open Firefox or Chrome and open [https://device-manager.scratch.mit.edu:20110/](https://device-manager.scratch.mit.edu:20110/). You will see a security risk warning.
+4. Connect scratch to micro:bit or Lego Mindstorms:
+    * Open FireFox or Chrome and access [Scratch 3.0](https://scratch.mit.edu/)
+    * Select the "Add Extension" button
+    * Select micro:bit or Lego Mindstorms EV3 extension and follow the prompts to connect
+    * Build your project with the extension blocks
+
+In Case You Fail to Connect
+---------------------------
+If Scratch says "Make sure you have Scratch Link installed" but you are sure
+that scratch-link python script is running...
+
+1. Check that Firefox or Chrome allow local server certificate
+    * Open Firefox or Chrome and access [https://device-manager.scratch.mit.edu:20110/](https://device-manager.scratch.mit.edu:20110/). You will see a security risk warning.
     * In **Firefox**: Click "Advanced" and click "Accept Risk and Continue".
     * In **Chrome**: type the special bypass keyword `thisisunsafe`.
     * Immediately, you will see "Failed to open a WebSocket connection". This is expected.
 
-
-5. Connect scratch to micro:bit or Lego Mindstorms:
-    * Open [Scratch 3.0](https://scratch.mit.edu/)
-    * Select the "Add Extension" button
-    * Select micro:bit or Lego Mindstorms EV3 extension and follow the prompts to connect
-    * Build your project with the extension blocks
