@@ -10,6 +10,8 @@ import ssl
 import websockets
 import json
 import base64
+import logging
+import sys
 
 # for Bluetooth (e.g. Lego EV3)
 import bluetooth
@@ -21,12 +23,26 @@ from bluepy.btle import BTLEDisconnectError, BTLEManagementError
 import threading
 import time
 
+logLevel = logging.INFO
+
+# handle command line options
+if __name__ == "__main__":
+    opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
+    if "-h" in opts:
+        print((f"Usage: {sys.argv[0]} [OPTS]\n"
+               "OPTS:\t-h Show this help.\n"
+               "\t-d Print debug messages."
+        ))
+        sys.exit(1)
+    elif "-d" in opts:
+        print("Print debug messages")
+        logLevel = logging.DEBUG
+
 # for logging
-import logging
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-logger.setLevel(logging.INFO)
+handler.setLevel(logLevel)
+logger.setLevel(logLevel)
 logger.addHandler(handler)
 logger.propagate = False
 
