@@ -16,7 +16,7 @@ import bluetooth
 
 # for BLESession (e.g. BBC micro:bit)
 from bluepy.btle import Scanner, UUID, Peripheral, DefaultDelegate
-from bluepy.btle import BTLEDisconnectError
+from bluepy.btle import BTLEDisconnectError, BTLEManagementError
 
 import threading
 import time
@@ -432,16 +432,27 @@ class BLESession(Session):
             logger.debug(params)
 
         res = { "jsonrpc": "2.0" }
+        err_msg = None
 
         if self.status == self.INITIAL and method == 'discover':
             scanner = Scanner()
-            devices = scanner.scan(1.0)
-            for dev in devices:
-                if self.matches(dev, params['filters']):
-                    self.found_devices.append(dev)
-            if len(self.found_devices) == 0:
-                err_msg = f"BLE service not found for {params['filters']}"
+            try:
+                devices = scanner.scan(1.0)
+                for dev in devices:
+                    if self.matches(dev, params['filters']):
+                        self.found_devices.append(dev)
+            except BTLEManagementError as e:
+                logger.error(e);
+                err_msg = "Can not scan BLE devices. Check BLE controller."
+                logger.error(err_msg);
                 res["error"] = { "message": err_msg }
+                self.status = self.DONE
+
+            if len(self.found_devices) == 0 and not err_msg:
+                err_msg = (f"BLE service not found: {params['filters']}. "
+                           "Check BLE device.")
+                res["error"] = { "message": err_msg }
+                logger.error(err_msg)
                 self.status = self.DONE
             else:
                 res["result"] = None
@@ -551,7 +562,8 @@ start_server = websockets.serve(
 while True:
     try:
         asyncio.get_event_loop().run_until_complete(start_server)
+        logger.info("Started scratch-link")
         asyncio.get_event_loop().run_forever()
     except Exception as e:
-        logger.info("restart server...")
+        logger.info("Restarting scratch-link...")
 
