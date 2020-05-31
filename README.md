@@ -55,7 +55,7 @@ Installation
     Ubuntu
     $ sudo apt install bluez libbluetooth-dev libnss3-tools
     Arch
-    $ sudo pacman -S bluez nss
+    $ sudo pacman -S bluez bluez-utils nss
     ```
 
 3. Install python modules.
