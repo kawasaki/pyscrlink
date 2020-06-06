@@ -353,8 +353,12 @@ class BLESession(Session):
                         if not delegate.restart_notification_event.is_set():
                             delegate.restart_notification_event.wait()
                         try:
+                            logger.debug("getting lock for waitForNotification")
                             with self.session.lock:
+                                logger.debug("before waitForNotification")
                                 self.session.perip.waitForNotifications(1.0)
+                                logger.debug("after waitForNotification")
+                            logger.debug("released lock for waitForNotification")
                         except Exception as e:
                             logger.error(e)
                             self.session.close()
@@ -550,8 +554,10 @@ class BLESession(Session):
                                  "yet supported: ", params['encoding'])
                 msg_bstr = params['message'].encode('ascii')
                 data = base64.standard_b64decode(msg_bstr)
+                logger.debug("getting lock for c.write()")
                 with self.lock:
                     c.write(data)
+                logger.debug("released lock for c.write()")
                 res['result'] = len(data)
 
         logger.debug(res)
