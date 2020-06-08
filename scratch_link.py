@@ -12,6 +12,8 @@ import json
 import base64
 import logging
 import sys
+import signal
+import traceback
 
 # for Bluetooth (e.g. Lego EV3)
 import bluetooth
@@ -608,11 +610,28 @@ start_server = websockets.serve(
     ws_handler, "device-manager.scratch.mit.edu", 20110, ssl=ssl_context
 )
 
+def stack_trace():
+    print("in stack_trace")
+    code = []
+    for threadId, stack in sys._current_frames().items():
+        code.append("\n# ThreadID: %s" % threadId)
+        for filename, lineno, name, line in traceback.extract_stack(stack):
+            code.append('File: "%s", line %d, in %s' % (filename,
+                                                    lineno, name))
+            if line:
+                code.append("  %s" % (line.strip()))
+
+    for line in code:
+         print(line)
+
 while True:
     try:
         asyncio.get_event_loop().run_until_complete(start_server)
         logger.info("Started scratch-link")
         asyncio.get_event_loop().run_forever()
+    except KeyboardInterrupt as e:
+        stack_trace()
+        break
     except Exception as e:
         logger.info("Restarting scratch-link...")
 
