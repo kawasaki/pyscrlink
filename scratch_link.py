@@ -448,6 +448,17 @@ class BLESession(Session):
                 # ref: https://github.com/LLK/scratch-link/blob/develop/Documentation/BluetoothLE.md
         return False
 
+    def _get_service(self, service_id):
+        with self.lock:
+            service = self.perip.getServiceByUUID(UUID(service_id))
+
+    def _get_characteristic(self, chara_id):
+        if not self.perip:
+            return None
+        with self.lock:
+            charas = self.perip.getCharacteristics(uuid=chara_id)
+            return charas[0]
+
     def handle_request(self, method, params):
         """Handle requests from Scratch"""
         if self.delegate:
@@ -514,9 +525,8 @@ class BLESession(Session):
             logger.debug("handle read request")
             service_id = params['serviceId']
             chara_id = params['characteristicId']
-            charas = self.perip.getCharacteristics(uuid=chara_id)
-            c = charas[0]
-            if c.uuid != UUID(chara_id):
+            c = self._get_characteristic(chara_id)
+            if not c or c.uuid != UUID(chara_id):
                 logger.error("Failed to get characteristic {chara_id}")
                 self.status = self.DONE
             else:
@@ -531,23 +541,20 @@ class BLESession(Session):
             logger.debug("handle startNotifications request")
             service_id = params['serviceId']
             chara_id = params['characteristicId']
-            charas = self.perip.getCharacteristics(uuid=chara_id)
             self.startNotifications(service_id, chara_id)
 
         elif self.status == self.CONNECTED and method == 'stopNotifications':
             logger.debug("handle stopNotifications request")
             service_id = params['serviceId']
             chara_id = params['characteristicId']
-            charas = self.perip.getCharacteristics(uuid=chara_id)
             self.stopNotifications(service_id, chara_id)
 
         elif self.status == self.CONNECTED and method == 'write':
             logger.debug("handle write request")
             service_id = params['serviceId']
             chara_id = params['characteristicId']
-            charas = self.perip.getCharacteristics(uuid=chara_id)
-            c = charas[0]
-            if c.uuid != UUID(chara_id):
+            c = self._get_characteristic(chara_id)
+            if not c or c.uuid != UUID(chara_id):
                 logger.error("Failed to get characteristic {chara_id}")
                 self.status = self.DONE
             else:
@@ -566,14 +573,14 @@ class BLESession(Session):
         return res
 
     def setNotifications(self, service_id, chara_id, value):
-        service = self.perip.getServiceByUUID(UUID(service_id))
-        chas = service.getCharacteristics(forUUID=chara_id)
-        handle = chas[0].getHandle()
+        service = self._get_service(service_id)
+        c = self._get_characteristic(chara_id)
+        handle = c.getHandle()
         # prepare notification handler
         self.delegate.add_handle(service_id, chara_id, handle)
         # request notification to the BLE device
         with self.lock:
-            self.perip.writeCharacteristic(chas[0].getHandle() + 1, value, True)
+            self.perip.writeCharacteristic(handle + 1, value, True)
 
     def startNotifications(self, service_id, chara_id):
         logger.debug(f"start notification for {chara_id}")
