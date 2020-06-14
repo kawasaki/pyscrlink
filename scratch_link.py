@@ -361,7 +361,7 @@ class BLESession(Session):
                             logger.debug("getting lock for waitForNotification")
                             with self.session.lock:
                                 logger.debug("before waitForNotification")
-                                self.session.perip.waitForNotifications(1.0)
+                                self.session.perip.waitForNotifications(0.0001)
                                 logger.debug("after waitForNotification")
                             logger.debug("released lock for waitForNotification")
                         except Exception as e:
