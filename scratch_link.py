@@ -95,22 +95,20 @@ class Session():
         Notify BT/BLE device events to scratch.
         """
         logger.debug("start to notify")
-        # merge all notifications queued
-        notifications = []
+        # flush notification queue
         while not self.notification_queue.empty():
             method, params = self.notification_queue.get()
-            notifications.append(self._build_notification(method, params))
-        # send merged notifications
-        future = asyncio.run_coroutine_threadsafe(
-            self.websocket.send('\n'.join(notifications)), self.loop)
-        result = future.result()
+            self._send_notification(method, params)
 
-    def _build_notification(self, method, params):
+    def _send_notification(self, method, params):
         jsonn = { 'jsonrpc': "2.0", 'method': method }
         jsonn['params'] = params
         notification = json.dumps(jsonn)
         logger.debug(f"notification: {notification}")
-        return notification
+
+        future = asyncio.run_coroutine_threadsafe(
+            self.websocket.send(notification), self.loop)
+        result = future.result()
 
     async def handle(self):
         logger.debug("start session hanlder")
