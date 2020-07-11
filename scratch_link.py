@@ -326,8 +326,14 @@ class BLESession(Session):
     CONNECTED = 3
     DONE = 4
 
-    ADTYPE_COMP_16B = 0x3
-    ADTYPE_COMP_128B = 0x7
+    SERVICE_CLASS_UUID_ADTYPES = {
+        0x7: "adtype complete 128b",
+        0x3: "adtype complete 16b",
+        0x6: "adtype incomplete 128b",
+        0x5: "adtype complete 32b",
+        0x4: "adtype incomplete 32b",
+        0x2: "adtype incomplete 16b",
+    }
 
     class BLEThread(threading.Thread):
         """
@@ -418,6 +424,14 @@ class BLESession(Session):
     def __del__(self):
         self.close()
 
+    def _get_dev_uuid(self, dev):
+        for adtype in self.SERVICE_CLASS_UUID_ADTYPES:
+            service_class_uuid = dev.getValueText(adtype)
+            if service_class_uuid:
+                logger.debug(self.SERVICE_CLASS_UUID_ADTYPES[adtype])
+                return UUID(service_class_uuid)
+        return None
+
     def matches(self, dev, filters):
         """
         Check if the found BLE device mathces the filters Scracth specifies.
@@ -429,14 +443,9 @@ class BLESession(Session):
                     logger.debug(f"sevice to check: {s}")
                     given_uuid = s
                     logger.debug(f"given: {given_uuid}")
-                    service_class_uuid = dev.getValueText(self.ADTYPE_COMP_128B)
-                    logger.debug(f"adtype 128b: {service_class_uuid}")
-                    if not service_class_uuid:
-                        service_class_uuid = dev.getValueText(self.ADTYPE_COMP_16B)
-                        logger.debug(f"adtype 16b: {service_class_uuid}")
-                        if not service_class_uuid:
-                            continue
-                    dev_uuid = UUID(service_class_uuid)
+                    dev_uuid = self._get_dev_uuid(dev)
+                    if not dev_uuid:
+                        continue
                     logger.debug(f"dev: {dev_uuid}")
                     logger.debug(given_uuid == dev_uuid)
                     if given_uuid == dev_uuid:
