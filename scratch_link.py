@@ -335,6 +335,8 @@ class BLESession(Session):
         0x2: "adtype incomplete 16b",
     }
 
+    MAX_SCANNER_IF = 3
+
     class BLEThread(threading.Thread):
         """
         Separated thread to control notifications to Scratch.
@@ -494,14 +496,20 @@ class BLESession(Session):
         err_msg = None
 
         if self.status == self.INITIAL and method == 'discover':
-            scanner = Scanner()
-            try:
-                devices = scanner.scan(10.0)
-                for dev in devices:
-                    if self.matches(dev, params['filters']):
-                        self.found_devices.append(dev)
-            except BTLEManagementError as e:
-                logger.error(e);
+            found_ifaces = 0
+            for i in range(self.MAX_SCANNER_IF):
+                scanner = Scanner(iface=i)
+                try:
+                    devices = scanner.scan(10.0)
+                    for dev in devices:
+                        if self.matches(dev, params['filters']):
+                            self.found_devices.append(dev)
+                    found_ifaces += 1
+                    logger.debug(f"BLE device found with iface #{i}");
+                except BTLEManagementError as e:
+                    logger.debug(f"BLE iface #{i}: {e}");
+
+            if found_ifaces == 0:
                 err_msg = "Can not scan BLE devices. Check BLE controller."
                 logger.error(err_msg);
                 res["error"] = { "message": err_msg }
