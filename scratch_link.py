@@ -496,7 +496,7 @@ class BLESession(Session):
         if self.status == self.INITIAL and method == 'discover':
             scanner = Scanner()
             try:
-                devices = scanner.scan(1.0)
+                devices = scanner.scan(10.0)
                 for dev in devices:
                     if self.matches(dev, params['filters']):
                         self.found_devices.append(dev)
