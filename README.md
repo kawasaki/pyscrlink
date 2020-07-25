@@ -53,9 +53,9 @@ Installation
 
     ```sh
     Ubuntu
-    $ sudo apt install bluez libbluetooth-dev libnss3-tools
+    $ sudo apt install bluez libbluetooth-dev libnss3-tools libcap2-bin
     Arch
-    $ sudo pacman -S bluez bluez-utils nss
+    $ sudo pacman -S bluez bluez-utils nss libcap
     ```
 
 3. Install python modules.
@@ -94,7 +94,14 @@ Installation
     Added certificate to Chrome
     ```
 
-6. If using a micro:bit, install Scratch-link hex on your device.
+6. Set bluepy-helper capability
+    ```
+    ./setcap.sh
+    Set up bluepy-helper capability to allow use by normal users
+    /usr/lib/python3.8/site-packages/bluepy-1.3.0-py3.8.egg/bluepy/bluepy-helper = cap_net_admin,cap_net_raw+eip
+    ```
+
+7. If using a micro:bit, install Scratch-link hex on your device.
 
     * Download and unzip the [micro:bit Scratch Hex file](https://downloads.scratch.mit.edu/microbit/scratch-microbit-1.1.0.hex.zip).
     * Flash the micro:bit over USB with the Scratch .Hex File, you will see the
@@ -103,13 +110,7 @@ Installation
 
 Usage
 -----
-1. For micro:bit or other BLE devices, turn on Bluetooth Low Energy controller
-    ```sh
-    $ sudo btmgmt le on
-    $ sudo btmgmt power on
-    ```
-
-2. For Lego Mindstorms EV3, pair your Linux PC to the EV3 brick.
+1. For Lego Mindstorms EV3, pair your Linux PC to the EV3 brick.
 
    First, turn on the EV3 and ensure Bluetooth is enabled.
 
@@ -158,15 +159,15 @@ Usage
    [bluetooth]# quit
    ```
 
-3. Start scratch-link python script
+2. Start scratch-link python script.
     ```sh
     $ cd ~/bluepy-scratch-link
-    $ sudo ./scratch_link.py
+    $ ./scratch_link.py
     Or if your system has python3 command,
-    $ sudo python3 ./scratch_link.py
+    $ python3 ./scratch_link.py
     ```
 
-4. Connect scratch to micro:bit or Lego Mindstorms:
+3. Connect scratch to micro:bit or Lego Mindstorms:
     * Open FireFox or Chrome and access [Scratch 3.0](https://scratch.mit.edu/)
     * Select the "Add Extension" button
     * Select micro:bit or Lego Mindstorms EV3 extension and follow the prompts to connect
@@ -174,12 +175,21 @@ Usage
 
 In Case You Fail to Connect
 ---------------------------
-If Scratch says "Make sure you have Scratch Link installed" but you are sure
-that scratch-link python script is running...
 
-1. Check that Firefox or Chrome allow local server certificate
+1. If Scratch says "Make sure you have Scratch Link installed" but you are sure
+   that scratch-link python script is running, check that Firefox or Chrome
+   allows local server certificate.
     * Open Firefox or Chrome and access [https://device-manager.scratch.mit.edu:20110/](https://device-manager.scratch.mit.edu:20110/). You will see a security risk warning.
     * In **Firefox**: Click "Advanced" and click "Accept Risk and Continue".
     * In **Chrome**: type the special bypass keyword `thisisunsafe`.
     * Immediately, you will see "Failed to open a WebSocket connection". This is expected.
 
+2. If device scan fails, check systemd bluetooth service status.
+    ```
+    systemctl status bluetooth.service
+    ```
+    * If the service is not working, refer guide of your distro to set it up.
+    * If the service is working, also check that /etc/bluetooth/main.conf sets AutoEnable=true.
+
+3. If scratch_link.py says "failed to connect to BT device: [Errno 13] Permission denied",
+   make sure to pair the bluetooth device to your PC before connecting to Scratch.
