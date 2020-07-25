@@ -43,8 +43,10 @@ if __name__ == "__main__":
 
 # for logging
 logger = logging.getLogger(__name__)
+formatter = logging.Formatter(fmt='%(asctime)s %(message)s')
 handler = logging.StreamHandler()
 handler.setLevel(logLevel)
+handler.setFormatter(formatter)
 logger.setLevel(logLevel)
 logger.addHandler(handler)
 logger.propagate = False
