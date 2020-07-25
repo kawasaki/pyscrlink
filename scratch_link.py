@@ -263,6 +263,7 @@ class BTSession(Session):
         if self.sock:
             logger.info(f"disconnect to BT socket: {self.sock}")
             self.sock.close()
+            self.sock = None
 
     def __del__(self):
         self.close()
