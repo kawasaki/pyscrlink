@@ -433,7 +433,9 @@ class BLESession(Session):
         self.status = self.DONE
         if self.perip:
             logger.info(f"disconnect to BLE peripheral: {self.perip}")
-            self.perip.disconnect()
+            with self.lock:
+                self.perip.disconnect()
+            self.perip = None
 
     def __del__(self):
         self.close()
