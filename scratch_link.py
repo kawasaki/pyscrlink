@@ -120,10 +120,22 @@ class Session():
         await self.recv_request()
         await asyncio.sleep(0.1)
         while True:
-            if await self.recv_request():
+            try:
+                if await self.recv_request():
+                    break
+                await self._send_notifications()
+                logger.debug("in handle loop")
+            except websockets.ConnectionClosedError as e:
+                logger.info("scratch closed session")
+                logger.debug(e)
+                self.close()
                 break
-            await self._send_notifications()
-            logger.debug("in handle loop")
+
+    def close(self):
+        """
+        Default handler called at session end.
+        """
+        return
 
 class BTSession(Session):
     """Manage a session for Bluetooth device"""
