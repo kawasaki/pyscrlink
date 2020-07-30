@@ -434,13 +434,13 @@ class BLESession(Session):
 
     def matches(self, dev, filters):
         """
-        Check if the found BLE device mathces the filters Scracth specifies.
+        Check if the found BLE device mathces the filters Scratch specifies.
         """
         logger.debug(f"in matches {dev} {filters}")
         for f in filters:
             if 'services' in f:
                 for s in f['services']:
-                    logger.debug(f"sevice to check: {s}")
+                    logger.debug(f"service to check: {s}")
                     given_uuid = s
                     logger.debug(f"given: {given_uuid}")
                     dev_uuid = self._get_dev_uuid(dev)
@@ -455,6 +455,16 @@ class BLESession(Session):
                 logger.error("name/manufactureData filters not implemented")
                 # TODO: implement other filters defined:
                 # ref: https://github.com/LLK/scratch-link/blob/develop/Documentation/BluetoothLE.md
+            if 'namePrefix' in f:
+                # 0x08: Shortened Local Name
+                deviceName = dev.getValueText(0x08)
+                if not deviceName:
+                    continue
+                logger.debug(f"Name of \"{deviceName}\" begins with: \"{f['namePrefix']}\"?")
+                if(deviceName.startswith(f['namePrefix'])):
+                    logger.debug("Yes")
+                    return True
+                logger.debug("No")
         return False
 
     def _get_service(self, service_id):
@@ -498,7 +508,7 @@ class BLESession(Session):
                 self.status = self.DONE
 
             if len(self.found_devices) == 0 and not err_msg:
-                err_msg = (f"BLE service not found: {params['filters']}. "
+                err_msg = (f"No BLE device found: {params['filters']}. "
                            "Check BLE device.")
                 res["error"] = { "message": err_msg }
                 logger.error(err_msg)
