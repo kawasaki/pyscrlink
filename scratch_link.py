@@ -434,7 +434,7 @@ class BLESession(Session):
 
     def matches(self, dev, filters):
         """
-        Check if the found BLE device mathces the filters Scratch specifies.
+        Check if the found BLE device matches the filters Scratch specifies.
         """
         logger.debug(f"in matches {dev} {filters}")
         for f in filters:
@@ -451,6 +451,16 @@ class BLESession(Session):
                     if given_uuid == dev_uuid:
                         logger.debug("match...")
                         return True
+            if 'namePrefix' in f:
+                # 0x08: Shortened Local Name
+                deviceName = dev.getValueText(0x08)
+                if not deviceName:
+                    continue
+                logger.debug(f"Name of \"{deviceName}\" begins with: \"{f['namePrefix']}\"?")
+                if(deviceName.startswith(f['namePrefix'])):
+                    logger.debug("Yes")
+                    return True
+                logger.debug("No")
             if 'name' in f or 'manufactureData' in f:
                 logger.error("name/manufactureData filters not implemented")
                 # TODO: implement other filters defined:
