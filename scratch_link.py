@@ -465,16 +465,6 @@ class BLESession(Session):
                 logger.error("name/manufactureData filters not implemented")
                 # TODO: implement other filters defined:
                 # ref: https://github.com/LLK/scratch-link/blob/develop/Documentation/BluetoothLE.md
-            if 'namePrefix' in f:
-                # 0x08: Shortened Local Name
-                deviceName = dev.getValueText(0x08)
-                if not deviceName:
-                    continue
-                logger.debug(f"Name of \"{deviceName}\" begins with: \"{f['namePrefix']}\"?")
-                if(deviceName.startswith(f['namePrefix'])):
-                    logger.debug("Yes")
-                    return True
-                logger.debug("No")
         return False
 
     def _get_service(self, service_id):
