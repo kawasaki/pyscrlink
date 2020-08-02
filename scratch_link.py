@@ -60,7 +60,7 @@ class Session():
     async def recv_request(self):
         """
         Handle a request from Scratch through websocket.
-        Return True when the sessino should end.
+        Return True when the session should end.
         """
         logger.debug("start recv_request")
         try:
@@ -116,7 +116,7 @@ class Session():
         await self.websocket.send(notification)
 
     async def handle(self):
-        logger.debug("start session hanlder")
+        logger.debug("start session handler")
         await self.recv_request()
         await asyncio.sleep(0.1)
         while True:
@@ -369,7 +369,7 @@ class BLESession(Session):
                     for d in devices:
                         params = { 'rssi': d.rssi }
                         params['peripheralId'] = devices.index(d)
-                        params['name'] = d.getValueText(0x9)
+                        params['name'] = d.getValueText(0x9) or d.getValueText(0x8)
                         self.session.notify('didDiscoverPeripheral', params)
                     time.sleep(1)
                 elif self.session.status == self.session.CONNECTED:
@@ -433,7 +433,7 @@ class BLESession(Session):
     def close(self):
         self.status = self.DONE
         if self.perip:
-            logger.info(f"disconnect to BLE peripheral: {self.perip}")
+            logger.info(f"disconnect from the BLE peripheral: {self.perip}")
             with self.lock:
                 self.perip.disconnect()
             self.perip = None
@@ -548,9 +548,9 @@ class BLESession(Session):
             try:
                 self.perip = Peripheral(self.device.addr,
                                         self.device.addrType)
-                logger.info(f"connect to BLE peripheral: {self.perip}")
+                logger.info(f"connected to the BLE peripheral: {self.perip}")
             except BTLEDisconnectError as e:
-                logger.error(f"failed to connect to BLE device: {e}")
+                logger.error(f"failed to connect to the BLE device: {e}")
                 self.status = self.DONE
 
             if self.perip:
