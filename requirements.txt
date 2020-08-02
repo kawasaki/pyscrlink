@@ -1,3 +1,4 @@
 websockets
 bluepy
 pybluez
+pyOpenSSL

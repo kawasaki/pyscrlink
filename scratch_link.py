@@ -26,6 +26,9 @@ import threading
 import time
 import queue
 
+# for websockets certificate
+import gencert
+
 logLevel = logging.INFO
 
 # handle command line options
@@ -642,10 +645,13 @@ class BLESession(Session):
             self.delegate.restart_notification_event.set()
         return self.status == self.DONE
 
+# Prepare certificate of the WSS server
+gencert.prep_cert()
+
 # kick start WSS server
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-localhost_cer = pathlib.Path(__file__).with_name("scratch-device-manager.cer")
-localhost_key = pathlib.Path(__file__).with_name("scratch-device-manager.key")
+localhost_cer = gencert.cert_file_path
+localhost_key = gencert.key_file_path
 ssl_context.load_cert_chain(localhost_cer, localhost_key)
 sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
 
