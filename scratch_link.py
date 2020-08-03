@@ -412,13 +412,14 @@ class BLESession(Session):
         self.status = self.INITIAL
         self.found_devices = []
         self.device = None
+        self.deviceName = None
         self.perip = None
         self.delegate = None
 
     def close(self):
         self.status = self.DONE
         if self.perip:
-            logger.info(f"disconnect from the BLE peripheral: {self.perip}")
+            logger.info(f"disconnect from the BLE peripheral: {self.deviceName}")
             self.perip.disconnect()
 
     def __del__(self):
@@ -436,7 +437,7 @@ class BLESession(Session):
         """
         Check if the found BLE device matches the filters Scratch specifies.
         """
-        logger.debug(f"in matches {dev} {filters}")
+        logger.debug(f"in matches {dev.addr} {filters}")
         for f in filters:
             if 'services' in f:
                 for s in f['services']:
@@ -522,12 +523,13 @@ class BLESession(Session):
         elif self.status == self.DISCOVERY and method == 'connect':
             logger.debug("connecting to the BLE device")
             self.device = self.found_devices[params['peripheralId']]
+            self.deviceName = self.device.getValueText(0x9) or self.device.getValueText(0x8)
             try:
                 self.perip = Peripheral(self.device.addr,
                                         self.device.addrType)
-                logger.info(f"connected to the BLE peripheral: {self.perip}")
+                logger.info(f"connected to the BLE peripheral: {self.deviceName}")
             except BTLEDisconnectError as e:
-                logger.error(f"failed to connect to the BLE device: {e}")
+                logger.error(f"failed to connect to the BLE device \"{self.deviceName}\": {e}")
                 self.status = self.DONE
 
             if self.perip:
@@ -536,7 +538,7 @@ class BLESession(Session):
                 self.delegate = self.BLEDelegate(self)
                 self.perip.withDelegate(self.delegate)
             else:
-                err_msg = f"BLE connect failed :{self.device}"
+                err_msg = f"BLE connect failed: {self.deviceName}"
                 res["error"] = { "message": err_msg }
                 self.status = self.DONE
 
@@ -546,7 +548,7 @@ class BLESession(Session):
             chara_id = params['characteristicId']
             c = self._get_characteristic(chara_id)
             if not c or c.uuid != UUID(chara_id):
-                logger.error("Failed to get characteristic {chara_id}")
+                logger.error(f"Failed to get characteristic {chara_id}")
                 self.status = self.DONE
             else:
                 with self.lock:
@@ -574,7 +576,7 @@ class BLESession(Session):
             chara_id = params['characteristicId']
             c = self._get_characteristic(chara_id)
             if not c or c.uuid != UUID(chara_id):
-                logger.error("Failed to get characteristic {chara_id}")
+                logger.error(f"Failed to get characteristic {chara_id}")
                 self.status = self.DONE
             else:
                 if params['encoding'] != 'base64':
