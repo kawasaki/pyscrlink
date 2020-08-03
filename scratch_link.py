@@ -549,8 +549,7 @@ class BLESession(Session):
             self.device = self.found_devices[params['peripheralId']]
             self.deviceName = self.device.getValueText(0x9) or self.device.getValueText(0x8)
             try:
-                self.perip = Peripheral(self.device.addr,
-                                        self.device.addrType)
+                self.perip = Peripheral(self.device)
                 logger.info(f"connected to the BLE peripheral: {self.deviceName}")
             except BTLEDisconnectError as e:
                 logger.error(f"failed to connect to the BLE device \"{self.deviceName}\": {e}")
