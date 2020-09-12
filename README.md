@@ -74,34 +74,14 @@ Installation
     $ git clone https://github.com/kawasaki/bluepy-scratch-link.git
     ```
 
-5. Prepare web server certificate.
-
-    Scratch-link requires local Secure WebSocket server with certificate.
-    Run a script to generate the certificate file and corresponding key file.
-    Be sure to run it as the user to run the web browser for Scratch so that
-    the script can add the generated certificate to FireFox or Chrome.
-    ```sh
-    $ cd ~/bluepy-scratch-link
-    $ ./gencert.sh
-    Generating a RSA private key
-    ..................................................+++++
-    .....................................................................................+++++
-    writing new private key to 'scratch-device-manager.key'
-    -----
-    Generated certificate: scratch-device-manager.cer
-    Generated key: scratch-device-manager.key
-    Added certificate to FireFox NSS DB: /home/shin/.mozilla/firefox/XXXX.default
-    Added certificate to Chrome
-    ```
-
-6. Set bluepy-helper capability
+5. Set bluepy-helper capability
     ```
     ./setcap.sh
     Set up bluepy-helper capability to allow use by normal users
     /usr/lib/python3.8/site-packages/bluepy-1.3.0-py3.8.egg/bluepy/bluepy-helper = cap_net_admin,cap_net_raw+eip
     ```
 
-7. If using a micro:bit, install Scratch-link hex on your device.
+6. If using a micro:bit, install Scratch-link hex on your device.
 
     * Download and unzip the [micro:bit Scratch Hex file](https://downloads.scratch.mit.edu/microbit/scratch-microbit-1.1.0.hex.zip).
     * Flash the micro:bit over USB with the Scratch .Hex File, you will see the
