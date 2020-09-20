@@ -76,9 +76,8 @@ Installation
 
 5. Set bluepy-helper capability
     ```
-    ./setcap.sh
-    Set up bluepy-helper capability to allow use by normal users
-    /usr/lib/python3.8/site-packages/bluepy-1.3.0-py3.8.egg/bluepy/bluepy-helper = cap_net_admin,cap_net_raw+eip
+    $ sudo ./bluepy_helper_cap.py
+    Set capacbility 'cap_net_raw,cap_net_admin' to /usr/lib/python3.8/site-packages/bluepy-1.3.0-py3.8.egg/bluepy/bluepy-helper
     ```
 
 6. If using a micro:bit, install Scratch-link hex on your device.

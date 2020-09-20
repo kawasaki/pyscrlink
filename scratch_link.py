@@ -21,6 +21,7 @@ import bluetooth
 # for BLESession (e.g. BBC micro:bit)
 from bluepy.btle import Scanner, UUID, Peripheral, DefaultDelegate
 from bluepy.btle import BTLEDisconnectError, BTLEManagementError
+import bluepy_helper_cap
 
 import threading
 import time
@@ -518,6 +519,11 @@ class BLESession(Session):
         err_msg = None
 
         if self.status == self.INITIAL and method == 'discover':
+            if not bluepy_helper_cap.is_set():
+                logger.error("Capability is not set to bluepy helper.")
+                logger.error("Run bluepy_setcap.py with root privilege.")
+                logger.error("e.g. $ sudo bluepy_helper_cap.py")
+                sys.exit(1)
             found_ifaces = 0
             for i in range(self.MAX_SCANNER_IF):
                 scanner = Scanner(iface=i)
