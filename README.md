@@ -49,6 +49,8 @@ Installation
    Bluetooth 4.0 controller supports BLE. If your PC does not have it, need
    to plug USB Bluetooth 4.0 adapter.
 
+   Note: BLED112 USB dongle with Bluegiga BGAPI is not supported.
+
 2. Install required packages.
 
     ```sh
