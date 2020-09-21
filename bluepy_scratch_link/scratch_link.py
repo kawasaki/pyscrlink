@@ -651,16 +651,6 @@ class BLESession(Session):
             self.delegate.restart_notification_event.set()
         return self.status == self.DONE
 
-# Prepare certificate of the WSS server
-gencert.prep_cert()
-
-# kick start WSS server
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-localhost_cer = gencert.cert_file_path
-localhost_key = gencert.key_file_path
-ssl_context.load_cert_chain(localhost_cer, localhost_key)
-sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
-
 async def ws_handler(websocket, path):
     try:
         logger.info(f"Start session for web socket path: {path}")
@@ -670,10 +660,6 @@ async def ws_handler(websocket, path):
     except Exception as e:
         logger.error(f"Failure in session for web socket path: {path}")
         logger.error(e)
-
-start_server = websockets.serve(
-    ws_handler, "device-manager.scratch.mit.edu", 20110, ssl=ssl_context
-)
 
 def stack_trace():
     print("in stack_trace")
@@ -689,14 +675,29 @@ def stack_trace():
     for line in code:
          print(line)
 
-while True:
-    try:
-        asyncio.get_event_loop().run_until_complete(start_server)
-        logger.info("Started scratch-link")
-        asyncio.get_event_loop().run_forever()
-    except KeyboardInterrupt as e:
-        stack_trace()
-        break
-    except Exception as e:
-        logger.info("Restarting scratch-link...")
+def main():
+    # Prepare certificate of the WSS server
+    gencert.prep_cert()
+
+    # kick start WSS server
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    localhost_cer = gencert.cert_file_path
+    localhost_key = gencert.key_file_path
+    ssl_context.load_cert_chain(localhost_cer, localhost_key)
+    sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
+
+    start_server = websockets.serve(
+         ws_handler, "device-manager.scratch.mit.edu", 20110, ssl=ssl_context
+    )
+
+    while True:
+        try:
+            asyncio.get_event_loop().run_until_complete(start_server)
+            logger.info("Started scratch-link")
+            asyncio.get_event_loop().run_forever()
+        except KeyboardInterrupt as e:
+            stack_trace()
+            break
+        except Exception as e:
+            logger.info("Restarting scratch-link...")
 
