@@ -53,8 +53,8 @@ def setcap():
     path = helper_path()
     if is_set():
         return True
-    p = subprocess.run(["setcap", "cap_net_raw,cap_net_admin+eip", path], \
-                       capture_output=True)
+    p = subprocess.run(["sudo", "setcap", "cap_net_raw,cap_net_admin+eip", \
+                        path], capture_output=True)
     if p.returncode !=0:
         logger.error(f"Failed to set capability to {path}")
         return False
