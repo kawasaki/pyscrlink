@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from scratch_link import main as _main
+from bluepy_scratch_link.scratch_link import main as _main
 
 if __name__ == '__main__':
     _main()

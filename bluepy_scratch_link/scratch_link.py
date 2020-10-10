@@ -21,29 +21,16 @@ import bluetooth
 # for BLESession (e.g. BBC micro:bit)
 from bluepy.btle import Scanner, UUID, Peripheral, DefaultDelegate
 from bluepy.btle import BTLEDisconnectError, BTLEManagementError
-import bluepy_helper_cap
+from bluepy_scratch_link import bluepy_helper_cap
 
 import threading
 import time
 import queue
 
 # for websockets certificate
-import gencert
+from bluepy_scratch_link import gencert
 
 logLevel = logging.INFO
-
-# handle command line options
-if __name__ == "__main__":
-    opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
-    if "-h" in opts:
-        print((f"Usage: {sys.argv[0]} [OPTS]\n"
-               "OPTS:\t-h Show this help.\n"
-               "\t-d Print debug messages."
-        ))
-        sys.exit(1)
-    elif "-d" in opts:
-        print("Print debug messages")
-        logLevel = logging.DEBUG
 
 # for logging
 logger = logging.getLogger(__name__)
@@ -652,6 +639,7 @@ class BLESession(Session):
         return self.status == self.DONE
 
 async def ws_handler(websocket, path):
+    sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
     try:
         logger.info(f"Start session for web socket path: {path}")
         loop = asyncio.get_event_loop()
@@ -676,6 +664,19 @@ def stack_trace():
          print(line)
 
 def main():
+    opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
+    if "-h" in opts:
+        print((f"Usage: {sys.argv[0]} [OPTS]\n"
+               "OPTS:\t-h Show this help.\n"
+               "\t-d Print debug messages."
+        ))
+        sys.exit(1)
+    elif "-d" in opts:
+        print("Print debug messages")
+        logLevel = logging.DEBUG
+        handler.setLevel(logLevel)
+        logger.setLevel(logLevel)
+
     # Prepare certificate of the WSS server
     gencert.prep_cert()
 
@@ -684,7 +685,6 @@ def main():
     localhost_cer = gencert.cert_file_path
     localhost_key = gencert.key_file_path
     ssl_context.load_cert_chain(localhost_cer, localhost_key)
-    sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
 
     start_server = websockets.serve(
          ws_handler, "device-manager.scratch.mit.edu", 20110, ssl=ssl_context
@@ -701,3 +701,5 @@ def main():
         except Exception as e:
             logger.info("Restarting scratch-link...")
 
+if __name__ == "__main__":
+    main()
