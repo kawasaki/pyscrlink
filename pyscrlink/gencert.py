@@ -36,7 +36,7 @@ for cmd in DEPENDENT_TOOLS:
 SCRATCH_CERT_NICKNAME = "device-manager.scratch.mit.edu"
 
 homedir = os.path.expanduser('~')
-localdir = os.path.join(homedir, ".local/share/bluepy-scratch-link/")
+localdir = os.path.join(homedir, ".local/share/pyscrlink/")
 cert_file_path = os.path.join(localdir, "scratch-device-manager.cer")
 key_file_path = os.path.join(localdir, "scratch-device-manager.key")
 

@@ -21,14 +21,14 @@ import bluetooth
 # for BLESession (e.g. BBC micro:bit)
 from bluepy.btle import Scanner, UUID, Peripheral, DefaultDelegate
 from bluepy.btle import BTLEDisconnectError, BTLEManagementError
-from bluepy_scratch_link import bluepy_helper_cap
+from pyscrlink import bluepy_helper_cap
 
 import threading
 import time
 import queue
 
 # for websockets certificate
-from bluepy_scratch_link import gencert
+from pyscrlink import gencert
 
 logLevel = logging.INFO
 
