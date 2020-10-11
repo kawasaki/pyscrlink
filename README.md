@@ -1,26 +1,22 @@
-# bluepy-scratch-link
+# pyscrlink
 
-Bluepy-scratch-link is [Scratch-link](https://github.com/LLK/scratch-link)
-implemented on bluepy as a small python script. As of October 2019, Scratch-link
-is a software module which connects [Scratch](https://scratch.mit.edu/) and
-Bluetooth devices such as [micro:bit](https://microbit.org/). However, it works
-only on Windows and MacOS, and cannot connect Scratch and micro:bit on Linux.
+Pyscrlink is [Scratch-link](https://github.com/LLK/scratch-link) for Linux.
+Scratch-link is a software module which connects
+[Scratch](https://scratch.mit.edu/) and Bluetooth devices such as
+[micro:bit](https://microbit.org/). However, as of October 2020, it works only
+on Windows and MacOS, and cannot connect Scratch and micro:bit on Linux
+operating systems.
 
-Bluepy-scratch-link allows Linux PCs to connect Scratch and micro:bit. It uses
+Pyscrlink allows Linux OSes to connect Scratch and bluetooth devices. It uses
 Linux Bluetooth protocol stack [Bluez](http://www.bluez.org/) and its python
 interfaces [pybluez](https://github.com/pybluez/pybluez) to handle Bluetooth,
 and [bluepy](https://github.com/IanHarvey/bluepy) to handle Bluetooth Low
-Energy, or BLE, connections with micro:bit. It is confirmed that
-bluepy-scratch-link connects Scratch 3.0 and a micro:bit, and a Lego Mindstorms
-EV3.
+Energy, or BLE, connections. It is confirmed that pyscrlink connects Scratch
+3.0 and a micro:bit, Lego Mindstorms EV3, Lego WeDo and Lego Boost.
 
-This is a minimal implementation to support micro:bit and Lego Mindstorms EV3.
-It may work with other devices but these are untested. Some Scratch-link
-features are not implemented.
-
-Bluepy-scratch-link requires python version 3.6 and later to use websockets.
-If your system has python older than version 3.6, install newer version. If your
-Linux system has explicit command names python3 and pip3 for python version 3,
+Pyscrlink requires python version 3.6 and later to use websockets. If your
+system has python older than version 3.6, install newer version. If your Linux
+system has explicit command names python3 and pip3 for python version 3,
 use them in the instructions below.
 
 Confirmed Environments
@@ -28,16 +24,19 @@ Confirmed Environments
 The instructions below was confirmed with following devices and distros.
 Trial with other distros and feed-backs will be appreciated.
 
-The bluepy-scratch-link was confirmed with following devices:
+The pyscrlink (former bluepy-scratch-link) was confirmed with following devices,
+Linux distros and browsers.
+
+Devices:
 * micro:bit by @kawasaki
 * Lego Mindstorm EV3: by @chrisglencross
 
-The bluepy-scratch-link was confirmed with following Linux distros:
+Linux distros:
 * Arch Linux by @kawasaki
 * elementary OS 5.0 Juno by @kawasaki
 * Raspbian by @chirsglencross
 
-The bluepy-scratch-link was confirmed with following browsers:
+Browsers:
 * FireFox by @kawasaki
 * Chromium by @kawasaki
 
@@ -63,26 +62,22 @@ Installation
 3. Install python modules.
 
     ```sh
-    $ sudo pip install bluepy pybluez websockets
+    $ pip install pyscrlink
     Or if your system has python3 command,
-    $ sudo pip3 install bluepy pybluez websockets
+    $ pip3 install pyscrlink
     ```
 
-4. Get bluepy-scratch-link.
+4. For Bluetooth Low Energy (BLE) devices, set bluepy-helper capability.
 
-   Example below installs bluepy-scratch-link under your home directory.
-    ```sh
-    $ cd ~
-    $ git clone https://github.com/kawasaki/bluepy-scratch-link.git
     ```
-
-5. Set bluepy-helper capability
-    ```
-    $ sudo ./bluepy_helper_cap.py
+    $ bluepy_helper_cap
     Set capacbility 'cap_net_raw,cap_net_admin' to /usr/lib/python3.8/site-packages/bluepy-1.3.0-py3.8.egg/bluepy/bluepy-helper
     ```
 
-6. If using a micro:bit, install Scratch-link hex on your device.
+    The command above requires super user privilege. It may request to input
+    super user password.
+
+5. For micro:bit, install Scratch-link hex on your device.
 
     * Download and unzip the [micro:bit Scratch Hex file](https://downloads.scratch.mit.edu/microbit/scratch-microbit-1.1.0.hex.zip).
     * Flash the micro:bit over USB with the Scratch .Hex File, you will see the
@@ -142,16 +137,13 @@ Usage
 
 2. Start scratch-link python script.
     ```sh
-    $ cd ~/bluepy-scratch-link
-    $ ./scratch_link.py
-    Or if your system has python3 command,
-    $ python3 ./scratch_link.py
+    $ scratch_link
     ```
 
 3. Connect scratch to micro:bit or Lego Mindstorms:
     * Open FireFox or Chrome and access [Scratch 3.0](https://scratch.mit.edu/)
     * Select the "Add Extension" button
-    * Select micro:bit or Lego Mindstorms EV3 extension and follow the prompts to connect
+    * Select the extension for your device (e.g., micro:bit or Lego Mindstorms EV3 extension) and follow the prompts to connect
     * Build your project with the extension blocks
 
 In Case You Fail to Connect
