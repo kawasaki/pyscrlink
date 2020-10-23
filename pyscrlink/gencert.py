@@ -83,12 +83,13 @@ def certutil_db_name(dir):
 def remove_cert(dir, nickname):
     while True:
         p = subprocess.run(["certutil", "-L", "-d", certutil_db_name(dir),
-                            "-n", nickname], capture_output=True)
+                            "-n", nickname], stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT)
         if p.returncode != 0:
             break
         logger.info(f"Delete certificate {nickname} from {dir}")
         p = subprocess.run(["certutil", "-D", "-d", certutil_db_name(dir),
-                            "-n", nickname])
+                            "-n", nickname], stdout=subprocess.PIPE)
 
 def is_cert_valid(cert_path):
     """
@@ -105,14 +106,15 @@ def has_cert(dir, cert, nickname):
     """
     # Try to list with given nick name.
     p = subprocess.run(["certutil", "-L", "-d", certutil_db_name(dir),
-                        "-n", nickname], capture_output=True)
+                        "-n", nickname], stdout=subprocess.PIPE,
+                       stderr=subprocess.STDOUT)
     if p.returncode != 0:
         # No certificate with the nick name.
         return False
 
     # Get the certificate in the NSSDB.
     p = subprocess.run(["certutil", "-L", "-d", certutil_db_name(dir),
-                            "-n", nickname, "-a"], capture_output=True)
+                        "-n", nickname, "-a"], stdout=subprocess.PIPE)
     assert (p.returncode == 0), "Unexpected certutil result"
     cert_in_db = p.stdout.replace(b'\r\n', b'\n')
 
