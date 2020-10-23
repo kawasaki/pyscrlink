@@ -12,6 +12,10 @@ case ${1} in
 	build)
 		python setup.py sdist bdist_wheel
 		;;
+	upload)
+		shift
+		python -m twine upload "$@"
+		;;
 	upload-testpypi)
 		shift
 		python -m twine upload --repository testpypi "$@"
