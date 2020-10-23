@@ -19,6 +19,13 @@ system has python older than version 3.6, install newer version. If your Linux
 system has explicit command names python3 and pip3 for python version 3,
 use them in the instructions below.
 
+Pyscrlink started in 2019 as "bluepy-scratch-link", which was a small work only
+for micro:bit and bluepy for BLE connections. After many contributions, it
+expanded coverage to other devices and pybluez for Bluetooth connections. The
+name "bluepy-scratch-link" was misleading that it indicate that it would depend
+only on bluepy. As of October 2020, the project was renamed from
+"bluepy-scratch-link" to "pyscrlink" to avoid the confusion.
+
 Confirmed Environments
 ----------------------
 The instructions below was confirmed with following devices and distros.
