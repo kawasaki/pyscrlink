@@ -60,6 +60,7 @@ def gen_cert(cert_path, key_path):
     cert.get_subject().CN = SCRATCH_CERT_NICKNAME
     cert.gmtime_adj_notBefore(9)
     cert.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)  # ten years
+    cert.set_version(2) # version 3 of X.509 (0 start)
     cert.set_pubkey(key)
     cert.set_issuer(cert.get_subject())
     cert.add_extensions([
