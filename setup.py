@@ -19,6 +19,12 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
         ],
     python_requires='>=3.6',
+    install_requires=[
+        'websockets',
+        'bluepy',
+        'pybluez',
+        'pyOpenSSL',
+        ],
     entry_points={
         'console_scripts': [
             'scratch_link = pyscrlink.scratch_link:main',
