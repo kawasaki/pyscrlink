@@ -1,51 +1,63 @@
 # pyscrlink
 
-Pyscrlink is [Scratch-link](https://github.com/LLK/scratch-link) for Linux.
+Pyscrlink is a [Scratch-link](https://github.com/LLK/scratch-link) for Linux.
 Scratch-link is a software module which connects
-[Scratch](https://scratch.mit.edu/) and Bluetooth devices such as
-[micro:bit](https://microbit.org/). However, as of October 2020, it works only
-on Windows and MacOS, and cannot connect Scratch and micro:bit on Linux
-operating systems.
+[Scratch](https://scratch.mit.edu/) to Bluetooth devices such as
+[micro:bit](https://microbit.org/). However, as of October 2020, it only works
+on Windows and MacOS, and Linux operating systems can not connect Scratch and
+micro:bit.
 
-Pyscrlink allows Linux OSes to connect Scratch and bluetooth devices. It uses
-Linux Bluetooth protocol stack [Bluez](http://www.bluez.org/) and its python
-interfaces [pybluez](https://github.com/pybluez/pybluez) to handle Bluetooth,
-and [bluepy](https://github.com/IanHarvey/bluepy) to handle Bluetooth Low
-Energy, or BLE, connections. It is confirmed that pyscrlink connects Scratch
-3.0 and a micro:bit, Lego Mindstorms EV3, Lego WeDo and Lego Boost.
+Pyscrlink allows you to connect Scratch and bluetooth devices with the Linux
+OSes. It uses the Linux Bluetooth protocol stack [Bluez](http://www.bluez.org/)
+and its python interfaces [pybluez](https://github.com/pybluez/pybluez) to
+handle Bluetooth, and [bluepy](https://github.com/IanHarvey/bluepy) to handle
+Bluetooth Low Energy (BLE) connections. It has been reported that pyscrlink
+connects Scratch 3.0 with micro:bit, LEGO Mindstorms EV3, LEGO WeDo, LEGO
+Boost and Intelino Smart Train.
 
-Pyscrlink requires python version 3.6 and later to use websockets. If your
-system has python older than version 3.6, install newer version. If your Linux
-system has explicit command names python3 and pip3 for python version 3,
-use them in the instructions below.
+To use websockets, pyscrlink requires python version 3.6 or later. If your
+system has python older than version 3.6, install newer version. If your
+system has python 3 explicit command names python3 and pip3, use them in the
+steps below.
 
-Pyscrlink started in 2019 as "bluepy-scratch-link", which was a small work only
-for micro:bit and bluepy for BLE connections. After many contributions, it
-expanded coverage to other devices and pybluez for Bluetooth connections. The
-name "bluepy-scratch-link" was misleading that it indicate that it would depend
-only on bluepy. As of October 2020, the project was renamed from
-"bluepy-scratch-link" to "pyscrlink" to avoid the confusion.
+Pyscrlink was launched in 2019 as "bluepy-scratch-link". This was a small task
+dedicated to micro:bit and bluepy for BLE connection. After many contributions,
+it expanded coverage to pybluez with other devices for Bluetooth connectivity.
+It was misleading that the name "bluepy-scratch-link" indicates that it depends
+only on bluepy. As of October 2020, name of the project has been changed from
+"bluepy-scratch-link" to "pyscrlink" to avoid confusion.
 
 Confirmed Environments
 ----------------------
 The instructions below was confirmed with following devices and distros.
 Trial with other distros and feed-backs will be appreciated.
 
-The pyscrlink (former bluepy-scratch-link) was confirmed with following devices,
-Linux distros and browsers.
+Pyscrlink was confirmed with following devices, Linux distros and browsers.
 
 Devices:
-* micro:bit by @kawasaki
-* Lego Mindstorm EV3: by @chrisglencross
+* micro:bit
 
 Linux distros:
-* Arch Linux by @kawasaki
-* elementary OS 5.0 Juno by @kawasaki
-* Raspbian by @chirsglencross
+* Arch Linux
+* elementary OS 5.1 Hera
 
 Browsers:
-* FireFox by @kawasaki
-* Chromium by @kawasaki
+* FireFox
+* Chromium
+
+It was reported that pyscrlink (former bluepy-scratch-link) working with
+following devices and Linux distros.
+
+Devices:
+* LEGO Mindstorm EV3 by @chrisglencross
+* LEGO WeDo by @zhaowe, @KingBBQ
+* LEGO Boost by @laurentchar, @miguev, @jacquesdt
+* Intelino Smart Train by @ErrorJan
+
+Linux distros:
+* Raspbian by @chrisglencross
+* Ubuntu 16.04 @jacquesdt
+* Ubuntu Studio 20.04 @miguev
 
 Installation
 ------------
@@ -93,7 +105,7 @@ Installation
 
 Usage
 -----
-1. For Lego Mindstorms EV3, pair your Linux PC to the EV3 brick.
+1. For LEGO Mindstorms EV3, pair your Linux PC to the EV3 brick.
 
    First, turn on the EV3 and ensure Bluetooth is enabled.
 
@@ -147,11 +159,12 @@ Usage
     $ scratch_link
     ```
 
-3. Connect scratch to micro:bit or Lego Mindstorms:
-    * Open FireFox or Chrome and access [Scratch 3.0](https://scratch.mit.edu/)
-    * Select the "Add Extension" button
-    * Select the extension for your device (e.g., micro:bit or Lego Mindstorms EV3 extension) and follow the prompts to connect
-    * Build your project with the extension blocks
+3. Connect scratch to micro:bit or LEGO Mindstorms:
+    * Open FireFox or Chrome. (Make sure to run as the same user for scratch-link python script.)
+    * Access [Scratch 3.0](https://scratch.mit.edu/) and create your project.
+    * Select the "Add Extension" button.
+    * Select the extension for your device (e.g., micro:bit or Lego Mindstorms EV3 extension) and follow the prompts to connect.
+    * Build your project with the extension blocks.
 
 In Case You Fail to Connect
 ---------------------------
