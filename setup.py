@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyscrlink",
-    version="0.1b4",
+    version="0.1.0",
     author="Shin'ichiro Kawasaki",
     author_email='kawasaki@juno.dti.ne.jp',
     description='Scratch-link for Linux with Python',
