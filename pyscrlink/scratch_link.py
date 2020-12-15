@@ -423,6 +423,7 @@ class BLESession(Session):
         self.deviceName = None
         self.perip = None
         self.delegate = None
+        self.characteristics_cache = []
 
     def close(self):
         self.status = self.DONE
@@ -489,6 +490,13 @@ class BLESession(Session):
         with self.lock:
             charas = self.perip.getCharacteristics(uuid=chara_id)
             return charas[0]
+
+    def _get_all_characteristics(self):
+        if not self.perip:
+            return None
+        with self.lock:
+            characteristics = self.perip.getCharacteristics()
+            return characteristics
 
     def handle_request(self, method, params):
         """Handle requests from Scratch"""
@@ -558,6 +566,7 @@ class BLESession(Session):
                 self.status = self.CONNECTED
                 self.delegate = self.BLEDelegate(self)
                 self.perip.withDelegate(self.delegate)
+                self.characteristics_cache = self._get_all_characteristics()
             else:
                 err_msg = f"BLE connect failed: {self.deviceName}"
                 res["error"] = { "message": err_msg }
@@ -595,7 +604,11 @@ class BLESession(Session):
             logger.debug("handle write request")
             service_id = params['serviceId']
             chara_id = params['characteristicId']
-            c = self._get_characteristic(chara_id)
+            c = None
+            for characteristic in self.characteristics_cache:
+                if characteristic.uuid == chara_id:
+                    c = characteristic
+                    break
             if not c or c.uuid != UUID(chara_id):
                 logger.error(f"Failed to get characteristic {chara_id}")
                 self.status = self.DONE
