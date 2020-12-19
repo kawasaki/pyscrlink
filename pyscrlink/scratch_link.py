@@ -491,12 +491,24 @@ class BLESession(Session):
             charas = self.perip.getCharacteristics(uuid=chara_id)
             return charas[0]
 
-    def _get_all_characteristics(self):
+    def _cache_characteristics(self):
+        if not self.perip:
+            return
+        with self.lock:
+            self.characteristics_cache = self.perip.getCharacteristics()
+        if not self.characteristics_cache:
+            logger.debug("Characteristics are not cached")
+
+    def _get_characteristic_cached(self, chara_id):
         if not self.perip:
             return None
-        with self.lock:
-            characteristics = self.perip.getCharacteristics()
-            return characteristics
+        if not self.characteristics_cache:
+            self._cache_characteristics()
+        if self.characteristics_cache:
+            for characteristic in self.characteristics_cache:
+                if characteristic.uuid == chara_id:
+                    return characteristic
+        return _get_characteristic(chara_id)
 
     def handle_request(self, method, params):
         """Handle requests from Scratch"""
@@ -566,7 +578,7 @@ class BLESession(Session):
                 self.status = self.CONNECTED
                 self.delegate = self.BLEDelegate(self)
                 self.perip.withDelegate(self.delegate)
-                self.characteristics_cache = self._get_all_characteristics()
+                self._cache_characteristics()
             else:
                 err_msg = f"BLE connect failed: {self.deviceName}"
                 res["error"] = { "message": err_msg }
@@ -604,11 +616,7 @@ class BLESession(Session):
             logger.debug("handle write request")
             service_id = params['serviceId']
             chara_id = params['characteristicId']
-            c = None
-            for characteristic in self.characteristics_cache:
-                if characteristic.uuid == chara_id:
-                    c = characteristic
-                    break
+            c = self._get_characteristic_cached(chara_id)
             if not c or c.uuid != UUID(chara_id):
                 logger.error(f"Failed to get characteristic {chara_id}")
                 self.status = self.DONE
