@@ -186,3 +186,15 @@ In Case You Fail to Connect
 
 3. If scratch_link.py says "failed to connect to BT device: [Errno 13] Permission denied",
    make sure to pair the bluetooth device to your PC before connecting to Scratch.
+
+Issus Reporting
+---------------
+
+Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrlink/issues).
+
+Releases
+--------
+
+Release 0.1.0
+
+* Initial release
