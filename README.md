@@ -195,6 +195,10 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.0
+
+* Latency issue fix for BLE devices' write characteristics
+
 Release 0.1.0
 
 * Initial release
