@@ -73,7 +73,7 @@ Installation
 
     ```sh
     Ubuntu
-    $ sudo apt install bluez libbluetooth-dev libnss3-tools libcap2-bin
+    $ sudo apt install bluez libbluetooth-dev libnss3-tools libcap2-bin libglib2.0-dev
     Arch
     $ sudo pacman -S bluez bluez-utils nss libcap
     ```
