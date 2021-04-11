@@ -195,6 +195,11 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.1
+
+* Added libglib to required package list in README.md
+* Improved setcap and getcap tool finding
+
 Release 0.2.0
 
 * Latency issue fix for BLE devices' write characteristics
