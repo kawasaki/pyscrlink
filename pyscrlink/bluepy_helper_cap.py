@@ -22,10 +22,26 @@ logger.propagate = False
 # Check dependent tools
 DEPENDENT_TOOLS = {
     "setcap": "libcap2-bin (Ubuntu) or libcap (Arch)",
+    "getcap": "libcap2-bin (Ubuntu) or libcap (Arch)",
 }
 
+tools = {}
+
 for cmd in DEPENDENT_TOOLS:
-    if not shutil.which(cmd):
+    # find the tools in PATH
+    path = shutil.which(cmd)
+    if path:
+        tools[cmd] = path
+        logger.debug(f"{cmd} found: {path}")
+        continue
+    # find the tools out of PATH but in major directories
+    for d in ["/usr/bin", "/bin", "/usr/sbin", "/sbin"]:
+        path = d + '/' + cmd
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            tools[cmd] = path
+            logger.debug(f"{cmd} found: {path}")
+            break
+    if not cmd in tools:
         print(f"'{cmd}' not found. Install package {DEPENDENT_TOOLS[cmd]}.")
         sys.exit(1)
 
@@ -42,7 +58,7 @@ def helper_path():
 
 def is_set():
     path = helper_path()
-    p = subprocess.run(["getcap", path], stdout=subprocess.PIPE)
+    p = subprocess.run([tools["getcap"], path], stdout=subprocess.PIPE)
     if p.returncode != 0:
         logger.error(f"Failed to get capability of {path}")
         return False
@@ -53,8 +69,8 @@ def setcap():
     path = helper_path()
     if is_set():
         return True
-    p = subprocess.run(["sudo", "setcap", "cap_net_raw,cap_net_admin+eip",
-                        path])
+    p = subprocess.run(["sudo", tools["setcap"],
+                        "cap_net_raw,cap_net_admin+eip", path])
     if p.returncode !=0:
         logger.error(f"Failed to set capability to {path}")
         return False
