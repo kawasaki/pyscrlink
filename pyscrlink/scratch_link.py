@@ -343,6 +343,11 @@ class BLESession(Session):
 
     MAX_SCANNER_IF = 3
 
+    found_devices = []
+    nr_connected = 0
+    scan_lock = threading.RLock()
+    scan_started = False
+
     class BLEThread(threading.Thread):
         """
         Separated thread to control notifications to Scratch.
@@ -358,7 +363,7 @@ class BLESession(Session):
                 logger.debug("loop in BLE thread")
                 if self.session.status == self.session.DISCOVERY:
                     logger.debug("send out found devices")
-                    devices = self.session.found_devices
+                    devices = BLESession.found_devices
                     for d in devices:
                         params = { 'rssi': d.rssi }
                         params['peripheralId'] = devices.index(d)
@@ -418,7 +423,6 @@ class BLESession(Session):
     def __init__(self, websocket, loop):
         super().__init__(websocket, loop)
         self.status = self.INITIAL
-        self.found_devices = []
         self.device = None
         self.deviceName = None
         self.perip = None
@@ -426,6 +430,13 @@ class BLESession(Session):
         self.characteristics_cache = []
 
     def close(self):
+        if self.status == self.CONNECTED:
+            BLESession.nr_connected -= 1
+            logger.info(f"BLE session disconnected")
+            logger.debug(f"BLE session connected={BLESession.nr_connected}")
+            if BLESession.nr_connected == 0:
+                logger.info("all BLE sessions disconnected")
+                BLESession.scan_started = False
         self.status = self.DONE
         if self.perip:
             logger.info("disconnect from the BLE peripheral: "
@@ -480,6 +491,29 @@ class BLESession(Session):
                 # ref: https://github.com/LLK/scratch-link/blob/develop/Documentation/BluetoothLE.md
         return False
 
+    def _scan_devices(self, params):
+        if BLESession.nr_connected > 0:
+            return len(BLESession.found_devices) > 0
+        found = False
+        with BLESession.scan_lock:
+            if not BLESession.scan_started:
+                BLESession.scan_started = True
+                BLESession.found_devices.clear()
+                for i in range(self.MAX_SCANNER_IF):
+                    scanner = Scanner(iface=i)
+                    try:
+                        devices = scanner.scan(10.0)
+                        for dev in devices:
+                            if self.matches(dev, params['filters']):
+                                BLESession.found_devices.append(dev)
+                                found = True
+                                logger.debug(f"BLE device found with iface #{i}");
+                    except BTLEManagementError as e:
+                        logger.debug(f"BLE iface #{i}: {e}");
+            else:
+                found = len(BLESession.found_devices) > 0
+        return found
+
     def _get_service(self, service_id):
         with self.lock:
             service = self.perip.getServiceByUUID(UUID(service_id))
@@ -532,26 +566,17 @@ class BLESession(Session):
                 logger.error("e.g. $ bluepy_helper_cap")
                 logger.error("e.g. $ sudo bluepy_helper_cap.py")
                 sys.exit(1)
-            found_ifaces = 0
-            for i in range(self.MAX_SCANNER_IF):
-                scanner = Scanner(iface=i)
-                try:
-                    devices = scanner.scan(10.0)
-                    for dev in devices:
-                        if self.matches(dev, params['filters']):
-                            self.found_devices.append(dev)
-                    found_ifaces += 1
-                    logger.debug(f"BLE device found with iface #{i}");
-                except BTLEManagementError as e:
-                    logger.debug(f"BLE iface #{i}: {e}");
-
-            if found_ifaces == 0:
-                err_msg = "Can not scan BLE devices. Check BLE controller."
+            found = self._scan_devices(params)
+            if not found:
+                if BLESession.nr_connected > 0:
+                    err_msg = "Can not scan BLE devices. Disconnect other sessions."
+                elif len(BLESession.found_devices) == 0:
+                    err_msg = "Can not scan BLE devices. Check BLE controller."
                 logger.error(err_msg);
                 res["error"] = { "message": err_msg }
                 self.status = self.DONE
 
-            if len(self.found_devices) == 0 and not err_msg:
+            if len(BLESession.found_devices) == 0 and not err_msg:
                 err_msg = (f"No BLE device found: {params['filters']}. "
                            "Check BLE device.")
                 res["error"] = { "message": err_msg }
@@ -565,11 +590,12 @@ class BLESession(Session):
 
         elif self.status == self.DISCOVERY and method == 'connect':
             logger.debug("connecting to the BLE device")
-            self.device = self.found_devices[params['peripheralId']]
+            self.device = BLESession.found_devices[params['peripheralId']]
             self.deviceName = self.device.getValueText(0x9) or self.device.getValueText(0x8)
             try:
                 self.perip = Peripheral(self.device)
                 logger.info(f"connected to the BLE peripheral: {self.deviceName}")
+                BLESession.found_devices.remove(self.device)
             except BTLEDisconnectError as e:
                 logger.error(f"failed to connect to the BLE device \"{self.deviceName}\": {e}")
                 self.status = self.DONE
@@ -577,6 +603,8 @@ class BLESession(Session):
             if self.perip:
                 res["result"] = None
                 self.status = self.CONNECTED
+                BLESession.nr_connected += 1
+                logger.debug(f"BLE session connected={BLESession.nr_connected}")
                 self.delegate = self.BLEDelegate(self)
                 self.perip.withDelegate(self.delegate)
                 self._cache_characteristics()
