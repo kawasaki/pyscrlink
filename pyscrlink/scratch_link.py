@@ -669,7 +669,8 @@ async def ws_handler(websocket, path):
         await session.handle()
     except Exception as e:
         logger.error(f"Failure in session for web socket path: {path}")
-        logger.error(e)
+        logger.error(f"{type(e).__name__}: {e}")
+        session.close()
 
 def stack_trace():
     print("in stack_trace")
