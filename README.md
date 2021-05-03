@@ -202,6 +202,11 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.2
+
+* Supported multiple device connections for toio
+* Improved session closure handling
+
 Release 0.2.1
 
 * Added libglib to required package list in README.md
