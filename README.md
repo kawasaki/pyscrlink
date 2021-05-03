@@ -13,7 +13,7 @@ and its python interfaces [pybluez](https://github.com/pybluez/pybluez) to
 handle Bluetooth, and [bluepy](https://github.com/IanHarvey/bluepy) to handle
 Bluetooth Low Energy (BLE) connections. It has been reported that pyscrlink
 connects Scratch 3.0 with micro:bit, LEGO Mindstorms EV3, LEGO WeDo, LEGO
-Boost and Intelino Smart Train.
+Boost, Intelino Smart Train and toio.
 
 To use websockets, pyscrlink requires python version 3.6 or later. If your
 system has python older than version 3.6, install newer version. If your
@@ -53,6 +53,7 @@ Devices:
 * LEGO WeDo by @zhaowe, @KingBBQ
 * LEGO Boost by @laurentchar, @miguev, @jacquesdt
 * Intelino Smart Train by @ErrorJan
+* toio by @shimodash
 
 Linux distros:
 * Raspbian by @chrisglencross
@@ -99,7 +100,7 @@ Installation
 5. For micro:bit, install Scratch-link hex on your device.
 
     * Download and unzip the [micro:bit Scratch Hex file](https://downloads.scratch.mit.edu/microbit/scratch-microbit-1.1.0.hex.zip).
-    * Flash the micro:bit over USB with the Scratch .Hex File, you will see the
+    * Flash the micro:bit over USB with the Scratch Hex File, you will see the
       five character name of the micro:bit scroll across the screen such as
       'zo9ev'.
 
@@ -159,7 +160,7 @@ Usage
     $ scratch_link
     ```
 
-3. Connect scratch to micro:bit or LEGO Mindstorms:
+3. Connect scratch to the target device such as micro:bit or LEGO Mindstorms:
     * Open FireFox or Chrome. (Make sure to run as the same user for scratch-link python script.)
     * Access [Scratch 3.0](https://scratch.mit.edu/) and create your project.
     * Select the "Add Extension" button.
@@ -186,6 +187,12 @@ In Case You Fail to Connect
 
 3. If scratch_link.py says "failed to connect to BT device: [Errno 13] Permission denied",
    make sure to pair the bluetooth device to your PC before connecting to Scratch.
+
+4. To connect to multiple devices at the same time, make all the target devices
+   ready for scan at the first device scan. This is important for toio. The toio
+   allows a single project to connect to two toio devices.
+   * When the second device was prepared after the first device was connected, device scan can not find the second device.
+   * To scan and find the second device, disconnect connections for the first device beforehand.
 
 Issus Reporting
 ---------------
