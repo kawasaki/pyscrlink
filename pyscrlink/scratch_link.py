@@ -8,6 +8,7 @@ import asyncio
 import pathlib
 import ssl
 import websockets
+import socket
 import json
 import base64
 import logging
@@ -41,6 +42,8 @@ handler.setFormatter(formatter)
 logger.setLevel(logLevel)
 logger.addHandler(handler)
 logger.propagate = False
+
+HOSTNAME="device-manager.scratch.mit.edu"
 
 class Session():
     """Base class for BTSession and BLESession"""
@@ -738,7 +741,7 @@ def main():
     ssl_context.load_cert_chain(localhost_cer, localhost_key)
 
     start_server = websockets.serve(
-         ws_handler, "device-manager.scratch.mit.edu", 20110, ssl=ssl_context
+         ws_handler, HOSTNAME, 20110, ssl=ssl_context
     )
 
     while True:
@@ -749,7 +752,13 @@ def main():
         except KeyboardInterrupt as e:
             stack_trace()
             break
+        except socket.gaierror as e:
+            logger.error(f"{type(e).__name__}: {e}")
+            logger.info(f"Check internet connection to {HOSTNAME}. If not "
+                        f"available, add '127.0.0.1 {HOSTNAME}' to /etc/hosts.")
+            break
         except Exception as e:
+            logger.error(f"{type(e).__name__}: {e}")
             logger.info("Restarting scratch-link...")
 
 if __name__ == "__main__":
