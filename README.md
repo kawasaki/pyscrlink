@@ -202,6 +202,10 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.3
+
+* Fixed eternal loop caused by hostname resolve failure
+
 Release 0.2.2
 
 * Supported multiple device connections for toio
