@@ -424,8 +424,13 @@ class BLESession(Session):
         def handleNotification(self, handle, data):
             logger.debug(f"BLE notification: {handle} {data}")
             if handle not in self.handles:
-                logger.error(f"Notification with unknown {handle}")
-                return
+                logger.error(f"Notification with unknown handle: {handle}")
+                keys = list(self.handles.keys())
+                if keys and len(keys) == 1:
+                    logger.debug(f"Debug: override {handle} with {keys[0]}")
+                    handle = keys[0]
+                else:
+                    return
             params = self.handles[handle].copy()
             params['message'] = base64.standard_b64encode(data).decode('ascii')
             self.session.notify('characteristicDidChange', params)
