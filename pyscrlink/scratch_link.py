@@ -389,7 +389,8 @@ class BLESession(Session):
                                 logger.debug("after waitForNotification")
                             logger.debug("released lock for waitForNotification")
                         except Exception as e:
-                            logger.error(e)
+                            logger.error(f"Exception in waitForNotifications: "
+                                         f"{type(e).__name__}: {e}")
                             self.session.close()
                             break
                     else:
@@ -413,7 +414,8 @@ class BLESession(Session):
             self.restart_notification_event.set()
 
         def add_handle(self, serviceId, charId, handle):
-            logger.debug(f"add handle for notification: {handle}")
+            logger.debug(f"add handle for notification: "
+                         f"{serviceId} {charId} {handle}")
             params = { 'serviceId': UUID(serviceId).getCommonName(),
                        'characteristicId': charId,
                        'encoding': 'base64' }
@@ -421,6 +423,9 @@ class BLESession(Session):
 
         def handleNotification(self, handle, data):
             logger.debug(f"BLE notification: {handle} {data}")
+            if handle not in self.handles:
+                logger.error(f"Notification with unknown {handle}")
+                return
             params = self.handles[handle].copy()
             params['message'] = base64.standard_b64encode(data).decode('ascii')
             self.session.notify('characteristicDidChange', params)
