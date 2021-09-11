@@ -167,6 +167,13 @@ Usage
     * Select the extension for your device (e.g., micro:bit or Lego Mindstorms EV3 extension) and follow the prompts to connect.
     * Build your project with the extension blocks.
 
+Listo of Bluetooth Low Energy (BLE) Devices
+-------------------------------------------
+
+- Lego Mindstorm EV3
+- Lego Wedo 2.0 and compatible chinese devices
+
+
 In Case You Fail to Connect
 ---------------------------
 
