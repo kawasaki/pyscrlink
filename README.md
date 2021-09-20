@@ -59,7 +59,7 @@ Linux distros:
 * Raspbian by @chrisglencross
 * Ubuntu 16.04 @jacquesdt
 * Ubuntu Studio 20.04 @miguev
-* Debian 10 @n3storm
+* Debian 11 @n3storm
 
 Installation
 ------------
