@@ -42,7 +42,7 @@ Linux distros:
 * elementary OS 5.1 Hera
 
 Browsers:
-* FireFox
+* Firefox
 * Chromium
 
 It was reported that pyscrlink (former bluepy-scratch-link) working with
@@ -51,7 +51,7 @@ following devices and Linux distros.
 Devices:
 * LEGO Mindstorm EV3 by @chrisglencross
 * LEGO WeDo by @zhaowe, @KingBBQ
-* LEGO Boost by @laurentchar, @miguev, @jacquesdt
+* LEGO Boost and compatible chinese device (BLE) by @laurentchar, @miguev, @jacquesdt, @n3storm
 * Intelino Smart Train by @ErrorJan
 * toio by @shimodash
 
@@ -59,6 +59,7 @@ Linux distros:
 * Raspbian by @chrisglencross
 * Ubuntu 16.04 @jacquesdt
 * Ubuntu Studio 20.04 @miguev
+* Debian 10 @n3storm
 
 Installation
 ------------
