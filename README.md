@@ -51,7 +51,7 @@ following devices and Linux distros.
 Devices:
 * LEGO Mindstorm EV3 by @chrisglencross
 * LEGO WeDo by @zhaowe, @KingBBQ
-* LEGO Boost and compatible chinese device (BLE) by @laurentchar, @miguev, @jacquesdt, @n3storm
+* LEGO Boost and compatible devices by @laurentchar, @miguev, @jacquesdt, @n3storm
 * Intelino Smart Train by @ErrorJan
 * toio by @shimodash
 
@@ -88,7 +88,8 @@ Installation
     $ pip3 install pyscrlink
     ```
 
-4. For Bluetooth Low Energy (BLE) devices, set bluepy-helper capability.
+4. Set bluepy-helper capability.
+   This step is required for most of devices except LEGO Mindstorm EV3.
 
     ```
     $ bluepy_helper_cap
