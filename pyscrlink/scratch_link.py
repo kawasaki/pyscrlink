@@ -15,6 +15,7 @@ import logging
 import sys
 import signal
 import traceback
+import argparse
 
 # for Bluetooth (e.g. Lego EV3)
 import bluetooth
@@ -44,6 +45,7 @@ logger.addHandler(handler)
 logger.propagate = False
 
 HOSTNAME="device-manager.scratch.mit.edu"
+scan_seconds=10.0
 
 class Session():
     """Base class for BTSession and BLESession"""
@@ -495,6 +497,7 @@ class BLESession(Session):
         return False
 
     def _scan_devices(self, params):
+        global scan_seconds
         if BLESession.nr_connected > 0:
             return len(BLESession.found_devices) > 0
         found = False
@@ -505,7 +508,8 @@ class BLESession(Session):
                 for i in range(self.MAX_SCANNER_IF):
                     scanner = Scanner(iface=i)
                     try:
-                        devices = scanner.scan(10.0)
+                        logger.debug(f"start BLE scan: {scan_seconds} seconds")
+                        devices = scanner.scan(scan_seconds)
                         for dev in devices:
                             if self.matches(dev, params['filters']):
                                 BLESession.found_devices.append(dev)
@@ -718,18 +722,20 @@ def stack_trace():
          print(line)
 
 def main():
-    opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
-    if "-h" in opts:
-        print((f"Usage: {sys.argv[0]} [OPTS]\n"
-               "OPTS:\t-h Show this help.\n"
-               "\t-d Print debug messages."
-        ))
-        sys.exit(1)
-    elif "-d" in opts:
+    global scan_seconds
+    parser = argparse.ArgumentParser(description='start Scratch-link')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='print debug messages')
+    parser.add_argument('-s', '--scan_seconds', type=float, default=10.0,
+                        help='specifiy duration to scan BLE devices in seconds')
+    args = parser.parse_args()
+    if args.debug:
         print("Print debug messages")
         logLevel = logging.DEBUG
         handler.setLevel(logLevel)
         logger.setLevel(logLevel)
+    scan_seconds = args.scan_seconds
+    logger.debug(f"set scan_seconds: {scan_seconds}")
 
     # Prepare certificate of the WSS server
     gencert.prep_cert()
