@@ -206,6 +206,11 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.4
+
+* Added -s option to specify BLE scan duration
+* Improved README.md
+
 Release 0.2.3
 
 * Fixed eternal loop caused by hostname resolve failure
