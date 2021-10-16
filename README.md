@@ -161,6 +161,8 @@ Usage
     ```sh
     $ scratch_link
     ```
+    If your device is toio, add "-s 1" option to the scratch_link command. It
+    allows the toio Do Visual Programming to connect to toio automatically.
 
 3. Connect scratch to the target device such as micro:bit or LEGO Mindstorms:
     * Open FireFox or Chrome. (Make sure to run as the same user for scratch-link python script.)
