@@ -170,6 +170,9 @@ class BTSession(Session):
                 logger.debug(f"Found device {name} addr={address} class={device_class} rssi={rssi}")
                 major_class = (device_class & 0x1F00) >> 8
                 minor_class = (device_class & 0xFF) >> 2
+                if "LEGO Hub" in name:
+                    minor_class = 1
+                    logger.info(f"Pretend to be LEGO EV3 with LEGO Hub: class={major_class/minor_class}")
                 if major_class == self.major_class and minor_class == self.minor_class:
                     self.found_devices[address] = (name, device_class, rssi)
 
