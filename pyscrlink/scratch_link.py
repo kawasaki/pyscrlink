@@ -457,8 +457,11 @@ class BLESession(Session):
         for adtype in self.SERVICE_CLASS_UUID_ADTYPES:
             service_class_uuid = dev.getValueText(adtype)
             if service_class_uuid:
-                logger.debug(self.SERVICE_CLASS_UUID_ADTYPES[adtype])
-                return UUID(service_class_uuid)
+                a = self.SERVICE_CLASS_UUID_ADTYPES[adtype]
+                logger.debug(f"service class uuid for {a}/{adtype}: {service_class_uuid}")
+                uuid = UUID(service_class_uuid)
+                logger.debug(f"uuid: {uuid}")
+                return uuid
         return None
 
     def matches(self, dev, filters):
@@ -471,11 +474,11 @@ class BLESession(Session):
                 for s in f['services']:
                     logger.debug(f"service to check: {s}")
                     given_uuid = s
-                    logger.debug(f"given: {given_uuid}")
+                    logger.debug(f"given UUID: {given_uuid} hash={UUID(given_uuid).__hash__()}")
                     dev_uuid = self._get_dev_uuid(dev)
                     if not dev_uuid:
                         continue
-                    logger.debug(f"dev: {dev_uuid}")
+                    logger.debug(f"dev UUID: {dev_uuid} hash={dev_uuid.__hash__()}")
                     logger.debug(given_uuid == dev_uuid)
                     if given_uuid == dev_uuid:
                         logger.debug("match...")
