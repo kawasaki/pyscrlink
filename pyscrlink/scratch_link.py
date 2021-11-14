@@ -453,15 +453,14 @@ class BLESession(Session):
     def __del__(self):
         self.close()
 
-    def _get_dev_uuid(self, dev):
+    def _get_dev_uuids(self, dev):
         for adtype in self.SERVICE_CLASS_UUID_ADTYPES:
-            service_class_uuid = dev.getValueText(adtype)
-            if service_class_uuid:
-                a = self.SERVICE_CLASS_UUID_ADTYPES[adtype]
-                logger.debug(f"service class uuid for {a}/{adtype}: {service_class_uuid}")
-                uuid = UUID(service_class_uuid)
-                logger.debug(f"uuid: {uuid}")
-                return uuid
+            service_class_uuids = dev.getValue(adtype)
+            if service_class_uuids:
+                for u in service_class_uuids:
+                    a = self.SERVICE_CLASS_UUID_ADTYPES[adtype]
+                    logger.debug(f"service class uuid for {a}/{adtype}: {u}")
+                return service_class_uuids
         return None
 
     def matches(self, dev, filters):
@@ -475,14 +474,15 @@ class BLESession(Session):
                     logger.debug(f"service to check: {s}")
                     given_uuid = s
                     logger.debug(f"given UUID: {given_uuid} hash={UUID(given_uuid).__hash__()}")
-                    dev_uuid = self._get_dev_uuid(dev)
-                    if not dev_uuid:
+                    dev_uuids = self._get_dev_uuids(dev)
+                    if not dev_uuids:
                         continue
-                    logger.debug(f"dev UUID: {dev_uuid} hash={dev_uuid.__hash__()}")
-                    logger.debug(given_uuid == dev_uuid)
-                    if given_uuid == dev_uuid:
-                        logger.debug("match...")
-                        return True
+                    for u in dev_uuids:
+                        logger.debug(f"dev UUID: {u} hash={u.__hash__()}")
+                        logger.debug(given_uuid == u)
+                        if given_uuid == u:
+                            logger.debug("match...")
+                            return True
             if 'namePrefix' in f:
                 # 0x08: Shortened Local Name
                 deviceName = dev.getValueText(0x08)
