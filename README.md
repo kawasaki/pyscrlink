@@ -206,6 +206,10 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.5
+
+* Fixed handling of multiple UUIDs for LEGO Boost
+
 Release 0.2.4
 
 * Added -s option to specify BLE scan duration
