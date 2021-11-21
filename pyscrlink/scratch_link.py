@@ -188,7 +188,13 @@ class BTSession(Session):
             self.ping_time = None
 
         def discover(self):
-            discoverer = self.BTDiscoverer(self.major_device_class, self.minor_device_class)
+            major = self.major_device_class
+            minor = self.minor_device_class
+            if major == 8 and minor == 1:
+                logger.info(f"Search LEGO Hub instead of LEGO EV3")
+                minor = 4
+            logger.debug(f"BT discover: class={major}/{minor}")
+            discoverer = self.BTDiscoverer(major, minor)
             discoverer.find_devices(lookup_names=True)
             while self.session.status == self.session.DISCOVERY and not discoverer.done and not self.cancel_discovery:
                 readable = select.select([discoverer], [], [], 0.5)[0]
@@ -206,7 +212,7 @@ class BTSession(Session):
         def run(self):
             while self.session.status != self.session.DONE:
 
-                logger.debug("loop in BT thread")
+                logger.debug(f"loop in BT thread: session status={self.session.status}")
                 current_time = int(round(time.time()))
 
                 if self.session.status == self.session.DISCOVERY and not self.cancel_discovery:
