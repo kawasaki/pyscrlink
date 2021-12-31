@@ -362,6 +362,14 @@ class BLESession(Session):
     scan_lock = threading.RLock()
     scan_started = False
 
+    @staticmethod
+    def _getDevName(dev):
+        """
+        Get AdType 0x09 (Completed local name). If it is not available,
+        get AdType 0x08 (Shortened local name).
+        """
+        return dev.getValueText(0x9) or dev.getValueText(0x8)
+
     class BLEThread(threading.Thread):
         """
         Separated thread to control notifications to Scratch.
@@ -381,7 +389,7 @@ class BLESession(Session):
                     for d in devices:
                         params = { 'rssi': d.rssi }
                         params['peripheralId'] = devices.index(d)
-                        params['name'] = d.getValueText(0x9) or d.getValueText(0x8)
+                        params['name'] = BLESession._getDevName(d)
                         self.session.notify('didDiscoverPeripheral', params)
                     time.sleep(1)
                 elif self.session.status == self.session.CONNECTED:
@@ -504,7 +512,7 @@ class BLESession(Session):
                             return True
             if 'namePrefix' in f:
                 # 0x08: Shortened Local Name
-                deviceName = dev.getValueText(0x08)
+                deviceName = self._getDevName(dev)
                 if not deviceName:
                     continue
                 logger.debug(f"Name of \"{deviceName}\" begins with: \"{f['namePrefix']}\"?")
@@ -620,7 +628,7 @@ class BLESession(Session):
         elif self.status == self.DISCOVERY and method == 'connect':
             logger.debug("connecting to the BLE device")
             self.device = BLESession.found_devices[params['peripheralId']]
-            self.deviceName = self.device.getValueText(0x9) or self.device.getValueText(0x8)
+            self.deviceName = self._getDevName(self.device)
             try:
                 self.perip = Peripheral(self.device)
                 logger.info(f"connected to the BLE peripheral: {self.deviceName}")
