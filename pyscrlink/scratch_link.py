@@ -47,6 +47,8 @@ logger.propagate = False
 HOSTNAME="device-manager.scratch.mit.edu"
 scan_seconds=10.0
 
+CCCD_UUID = 0x2902
+
 class Session():
     """Base class for BTSession and BLESession"""
     def __init__(self, websocket, loop):
@@ -705,11 +707,19 @@ class BLESession(Session):
         service = self._get_service(service_id)
         c = self._get_characteristic(chara_id)
         handle = c.getHandle()
+        # get CCCD or Client Characterstic Configuration Descriptor
+        cccd = None
+        for d in c.getDescriptors():
+            if d.uuid == UUID(CCCD_UUID):
+                cccd = d
+        if not cccd:
+            logger.error("Characteristic {char_id} does not have CCCD")
+            return
         # prepare notification handler
         self.delegate.add_handle(service_id, chara_id, handle)
         # request notification to the BLE device
         with self.lock:
-            self.perip.writeCharacteristic(handle + 1, value, True)
+            self.perip.writeCharacteristic(cccd.handle, value, True)
 
     def startNotifications(self, service_id, chara_id):
         logger.debug(f"start notification for {chara_id}")
