@@ -1,1 +1,5 @@
-/__pycache__
+__pycache__
+build
+dist
+pyscrlink/__pycache__
+pyscrlink.egg-info
