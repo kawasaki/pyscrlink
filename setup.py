@@ -22,7 +22,6 @@ setuptools.setup(
     install_requires=[
         'websockets',
         'bluepy',
-        'pybluez',
         'pyOpenSSL',
         ],
     entry_points={
