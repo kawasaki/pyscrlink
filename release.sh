@@ -10,7 +10,7 @@ usage() {
 
 case ${1} in
 	build)
-		python setup.py sdist bdist_wheel
+		python -m build
 		;;
 	upload)
 		shift
