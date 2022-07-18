@@ -158,6 +158,10 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.6
+
+* Removed Bluetooth Classic and LEGO Mindstorm EV3 support
+
 Release 0.2.5
 
 * Fixed handling of multiple UUIDs for LEGO Boost
