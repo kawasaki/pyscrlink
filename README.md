@@ -9,11 +9,16 @@ micro:bit.
 
 Pyscrlink allows you to connect Scratch and bluetooth devices with the Linux
 OSes. It uses the Linux Bluetooth protocol stack [Bluez](http://www.bluez.org/)
-and its python interfaces [pybluez](https://github.com/pybluez/pybluez) to
-handle Bluetooth, and [bluepy](https://github.com/IanHarvey/bluepy) to handle
-Bluetooth Low Energy (BLE) connections. It has been reported that pyscrlink
-connects Scratch 3.0 with micro:bit, LEGO Mindstorms EV3, LEGO WeDo, LEGO
-Boost, Intelino Smart Train and toio.
+and [bluepy](https://github.com/IanHarvey/bluepy) to handle Bluetooth Low Energy
+(BLE) connections. It has been reported that pyscrlink connects Scratch 3.0 with
+micro:bit, LEGO WeDo, LEGO Boost and toio.
+
+Until version v0.2.5, pyscrlink supported Bluetooth Classic protocol using
+[pybluez](https://github.com/pybluez/pybluez). Unfortunately, pybluez is not
+well maintained and caused technical troubles. Then Bluetooth Classic protocol
+support is dropped from pyscrlink. This means that LEGO Mindstorm EV3 can not
+be connected with pyscrlink. Bluetooth Classic support is the improvement
+opportunity of pyscrlink.
 
 To use websockets, pyscrlink requires python version 3.6 or later. If your
 system has python older than version 3.6, install newer version. If your
@@ -39,7 +44,6 @@ Devices:
 
 Linux distros:
 * Arch Linux
-* elementary OS 5.1 Hera
 
 Browsers:
 * Firefox
@@ -49,10 +53,8 @@ It was reported that pyscrlink (former bluepy-scratch-link) working with
 following devices and Linux distros.
 
 Devices:
-* LEGO Mindstorm EV3 by @chrisglencross
 * LEGO WeDo by @zhaowe, @KingBBQ
 * LEGO Boost and compatible devices by @laurentchar, @miguev, @jacquesdt, @n3storm
-* Intelino Smart Train by @ErrorJan
 * toio by @shimodash
 
 Linux distros:
@@ -89,7 +91,6 @@ Installation
     ```
 
 4. Set bluepy-helper capability.
-   This step is required for most of devices except LEGO Mindstorm EV3.
 
     ```
     $ bluepy_helper_cap
@@ -108,67 +109,18 @@ Installation
 
 Usage
 -----
-1. For LEGO Mindstorms EV3, pair your Linux PC to the EV3 brick.
-
-   First, turn on the EV3 and ensure Bluetooth is enabled.
-
-   Then, pair using your Linux desktop's the Bluetooth settings.
-
-   If using Gnome:
-      * Settings -> Bluetooth
-      * Click on the EV3 device name
-      * Accept the connection on EV3 brick
-      * Enter a matching PIN on EV3 brick and Linux PC. '1234' is the value Scratch suggests.
-      * Confirm EV3 status is "Disconnected" in Bluetooth settings
-
-   With a Raspberry Pi default Raspbian desktop, click the Bluetooth logo in the top right of the screen and
-   Add Device. Then follow the Gnome instructions. You will be warned that the Raspberry Pi
-   does not know how to talk to this device; that is not a problem.
-
-   Alternatively you can perform pairing from the command-line:
-   ```shell script
-   $ bluetoothctl
-
-   [bluetooth]# power on
-   Changing power on succeeded
-
-   [bluetooth]# pairable on
-   Changing pairable on succeeded
-
-   [bluetooth]# agent KeyboardOnly
-   Agent registered
-
-   [bluetooth]# devices
-   ...
-   Device 00:16:53:53:D3:19 EV3
-   ...
-
-   [bluetooth]# pair 00:16:53:53:D3:19
-   Attempting to pair with 00:16:53:53:D3:19
-
-   # Confirm pairing on the EV3 display, set PIN to 1234
-
-   Request PIN code
-   [agent] Enter PIN code: 1234
-   [CHG] Device 00:16:53:53:D3:19 Connected: yes
-   [CHG] Device 00:16:53:53:D3:19 Paired: yes
-   Pairing successful
-
-   [bluetooth]# quit
-   ```
-
-2. Start scratch-link python script.
+1. Start scratch-link python script.
     ```sh
     $ scratch_link
     ```
     If your device is toio, add "-s 1" option to the scratch_link command. It
     allows the toio Do Visual Programming to connect to toio automatically.
 
-3. Connect scratch to the target device such as micro:bit or LEGO Mindstorms:
+2. Connect scratch to the target device such as micro:bit:
     * Open FireFox or Chrome. (Make sure to run as the same user for scratch-link python script.)
     * Access [Scratch 3.0](https://scratch.mit.edu/) and create your project.
     * Select the "Add Extension" button.
-    * Select the extension for your device (e.g., micro:bit or Lego Mindstorms EV3 extension) and follow the prompts to connect.
+    * Select the extension for your device (e.g., micro:bit) and follow the prompts to connect.
     * Build your project with the extension blocks.
 
 In Case You Fail to Connect
