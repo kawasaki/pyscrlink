@@ -152,36 +152,37 @@ def prep_nss_cert(dir, cert, nickname):
     remove_cert(dir, nickname)
     add_cert(dir, cert, nickname)
 
-def prep_cert():
-    # Generate certification and key
-    gen_cert(cert_file_path, key_file_path)
-
-    # Add certificate to FireFox
+def prep_cert_for_app(cert, app, search_path):
+    """
+    Find a NSS DB in the search_path for the app and prepare the cert in the DB.
+    """
     nssdb = None
-    firefox_nss_path = os.path.join(homedir, ".mozilla/firefox/")
-    for root, dirs, files in os.walk(firefox_nss_path):
+    for root, dirs, files in os.walk(os.path.join(homedir, search_path)):
         for name in files:
             if not re.match("key.*\.db", name):
                 continue
             nssdb = root
-            if prep_nss_cert(nssdb, cert_file_path, SCRATCH_CERT_NICKNAME):
-                logger.error(f"Failed to add certificate to FireFox NSS DB: {nssdb}")
+            if prep_nss_cert(nssdb, cert, SCRATCH_CERT_NICKNAME):
+                logger.error(f"Failed to add certificate to {app}: {nssdb}")
                 sys.exit(3)
             else:
-                logger.info(f"Certificate is ready in FireFox NSS DB: {nssdb}")
+                logger.info(f"Certificate is ready in {app} NSS DB: {nssdb}")
     if not nssdb:
-        logger.info("FireFox NSS DB not found. Do not add certificate.")
+        logger.debug(f"NSS DB for {app} not found. Do not add certificate.")
 
-    # Add certificate to Chrome
-    nssdb = os.path.join(homedir, ".pki/nssdb")
-    if os.path.isdir(nssdb):
-        if prep_nss_cert(nssdb, cert_file_path, SCRATCH_CERT_NICKNAME):
-            logger.error(f"Failed to add certificate to Chrome")
-            sys.exit(4)
-        else:
-            logger.info("Certificate is ready for Chrome")
-    else:
-        logger.info("Chrome NSS DB not found. Do not add certificate.")
+
+def prep_cert():
+    # Generate certification and key
+    gen_cert(cert_file_path, key_file_path)
+
+    nss_dbs = {
+        "FireFox": ".mozilla/firefox/",
+        "FireFox(Snap)": "snap/firefox/common/.mozilla/firefox/",
+        "Chrome": ".pki",
+        "Chromium(Snap)": "snap/chromium",
+        }
+
+    [ prep_cert_for_app(cert_file_path, k, nss_dbs[k]) for k in nss_dbs ]
 
 if __name__ == "__main__":
     prep_cert()
