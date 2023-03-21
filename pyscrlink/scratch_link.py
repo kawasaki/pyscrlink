@@ -318,16 +318,23 @@ class BLESession(Session):
                 BLESession.found_devices.clear()
                 for i in range(self.MAX_SCANNER_IF):
                     scanner = Scanner(iface=i)
-                    try:
-                        logger.debug(f"start BLE scan: {scan_seconds} seconds")
-                        devices = scanner.scan(scan_seconds)
-                        for dev in devices:
-                            if self.matches(dev, params['filters']):
-                                BLESession.found_devices.append(dev)
-                                found = True
-                                logger.debug(f"BLE device found with iface #{i}");
-                    except BTLEManagementError as e:
-                        logger.debug(f"BLE iface #{i}: {e}");
+                    for j in range(scan_retry):
+                        try:
+                            logger.debug(f"start BLE scan: {scan_seconds} seconds")
+                            devices = scanner.scan(scan_seconds)
+                            for dev in devices:
+                                if self.matches(dev, params['filters']):
+                                    BLESession.found_devices.append(dev)
+                                    found = True
+                                    logger.debug(f"BLE device found with iface #{i}");
+                            if found:
+                                break
+                        except BTLEDisconnectError as de:
+                            logger.debug(f"BLE iface #{i}: {de}");
+                        except BTLEManagementError as me:
+                            logger.debug(f"BLE iface #{i}: {me}");
+                    if found:
+                        break
             else:
                 found = len(BLESession.found_devices) > 0
         return found
@@ -534,11 +541,14 @@ def stack_trace():
 
 def main():
     global scan_seconds
+    global scan_retry
     parser = argparse.ArgumentParser(description='start Scratch-link')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='print debug messages')
     parser.add_argument('-s', '--scan_seconds', type=float, default=10.0,
                         help='specifiy duration to scan BLE devices in seconds')
+    parser.add_argument('-r', '--scan_retry', type=int, default=1,
+                        help='specifiy retry times to scan BLE devices')
     args = parser.parse_args()
     if args.debug:
         print("Print debug messages")
@@ -546,7 +556,9 @@ def main():
         handler.setLevel(logLevel)
         logger.setLevel(logLevel)
     scan_seconds = args.scan_seconds
+    scan_retry = args.scan_retry
     logger.debug(f"set scan_seconds: {scan_seconds}")
+    logger.debug(f"set scan_retry: {scan_retry}")
 
     # Prepare certificate of the WSS server
     gencert.prep_cert()
