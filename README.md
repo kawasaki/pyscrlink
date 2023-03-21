@@ -141,10 +141,22 @@ In Case You Fail to Connect
     * If the service is not working, refer guide of your distro to set it up.
     * If the service is working, also check that /etc/bluetooth/main.conf sets AutoEnable=true.
 
-3. If scratch_link.py says "failed to connect to BT device: [Errno 13] Permission denied",
+3. If device scan still fails, use -r option to retry device scan.
+    The command line below does device scan twice. Each scan takes 10 seconds.
+    ```
+    $ scratch_link -r 2
+    ```
+    It would be good to use -s option together to reduce each scan duration.
+    The command line below does 3 seconds device scan twice.
+
+    ```
+    $ scratch_link -r 2 -s 3
+    ```
+
+4. If scratch_link.py says "failed to connect to BT device: [Errno 13] Permission denied",
    make sure to pair the bluetooth device to your PC before connecting to Scratch.
 
-4. To connect to multiple devices at the same time, make all the target devices
+5. To connect to multiple devices at the same time, make all the target devices
    ready for scan at the first device scan. This is important for toio. The toio
    allows a single project to connect to two toio devices.
    * When the second device was prepared after the first device was connected, device scan can not find the second device.
