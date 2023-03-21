@@ -170,6 +170,11 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.7
+
+* Supported Snap Firefox and Chromium
+* Added -r option to retry BLE scan
+
 Release 0.2.6
 
 * Removed Bluetooth Classic and LEGO Mindstorm EV3 support
