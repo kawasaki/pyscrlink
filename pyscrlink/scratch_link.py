@@ -18,7 +18,7 @@ import traceback
 import argparse
 
 # for BLESession (e.g. BBC micro:bit)
-from bluepy.btle import Scanner, UUID, Peripheral, DefaultDelegate
+from bluepy.btle import Scanner, UUID, Peripheral, DefaultDelegate, ScanEntry
 from bluepy.btle import BTLEDisconnectError, BTLEManagementError
 from pyscrlink import bluepy_helper_cap
 
@@ -292,15 +292,19 @@ class BLESession(Session):
                             logger.debug("match...")
                             return True
             if 'namePrefix' in f:
-                # 0x08: Shortened Local Name
-                deviceName = dev.getValueText(0x08)
-                if not deviceName:
-                    continue
-                logger.debug(f"Name of \"{deviceName}\" begins with: \"{f['namePrefix']}\"?")
-                if(deviceName.startswith(f['namePrefix'])):
-                    logger.debug("Yes")
-                    return True
-                logger.debug("No")
+                logger.debug(f"given namePrefix: {f['namePrefix']}")
+                deviceName = dev.getValueText(ScanEntry.SHORT_LOCAL_NAME)
+                if deviceName:
+                    logger.debug(f"SHORT_LOCAL_NAME: {deviceName}")
+                    if deviceName.startswith(f['namePrefix']):
+                        logger.debug(f"match...")
+                        return True
+                deviceName = dev.getValueText(ScanEntry.COMPLETE_LOCAL_NAME)
+                if deviceName:
+                    logger.debug(f"COMPLETE_LOCAL_NAME: {deviceName}")
+                    if deviceName.startswith(f['namePrefix']):
+                        logger.debug(f"match...")
+                        return True
             if 'name' in f or 'manufactureData' in f:
                 logger.error("name/manufactureData filters not implemented")
                 # TODO: implement other filters defined:
