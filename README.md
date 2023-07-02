@@ -170,6 +170,10 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 Releases
 --------
 
+Release 0.2.8
+
+* Supported Microbit More v2
+
 Release 0.2.7
 
 * Supported Snap Firefox and Chromium
