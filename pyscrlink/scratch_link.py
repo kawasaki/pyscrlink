@@ -22,6 +22,18 @@ from bluepy.btle import Scanner, UUID, Peripheral, DefaultDelegate, ScanEntry
 from bluepy.btle import BTLEDisconnectError, BTLEManagementError
 from pyscrlink import bluepy_helper_cap
 
+# for BLEDbusSession
+from sdbus import DbusInterfaceCommonAsync, SdBus, sd_bus_open_system
+from sdbus.dbus_proxy_async_interfaces import DbusIntrospectableAsync
+import xml.etree.ElementTree as ET
+from sdbus_async.bluez.adapter_api import AdapterInterfaceAsync
+from sdbus_async.bluez.device_api import DeviceInterfaceAsync
+from sdbus_async.bluez.gatt_api import (
+    GattCharacteristicInterfaceAsync,
+    GattServiceInterfaceAsync,
+)
+from asyncio import sleep
+
 import threading
 import time
 import queue
@@ -67,7 +79,11 @@ class Session():
         if jsonreq['jsonrpc'] != '2.0':
             logger.error("error: jsonrpc version is not 2.0")
             return True
-        jsonres = self.handle_request(jsonreq['method'], jsonreq['params'])
+        if type(self) is BLEDBusSession:
+            jsonres = await self.async_handle_request(jsonreq['method'],
+                                                      jsonreq['params'])
+        else:
+            jsonres = self.handle_request(jsonreq['method'], jsonreq['params'])
         if 'id' in jsonreq:
             jsonres['id'] = jsonreq['id']
         response = json.dumps(jsonres)
@@ -80,6 +96,10 @@ class Session():
     def handle_request(self, method, params):
         """Default request handler"""
         logger.debug(f"default handle_request: {method}, {params}")
+
+    async def async_handle_request(self, method, params):
+        """Default async request handler"""
+        logger.debug(f"default async handle_request: {method}, {params}")
 
     def end_request(self):
         """
@@ -135,9 +155,192 @@ class Session():
 class BTSession(Session):
     """Manage a session for Bluetooth device"""
 
+class BLEDBusSession(Session):
+    """
+    Manage a session for Bluetooth Low Energy device such as micro:bit using
+    DBus as backend.
+    """
+
+    INITIAL = 1
+    DISCOVERY = 2
+    CONNECTED = 3
+    DONE = 4
+
+    MAX_SCANNER_IF = 3
+
+    found_devices = {}
+
+    def _connect_to_adapters(self):
+        self.iface = None
+        self.adapter = None
+        self.adapter_introspect = None
+        adapter = AdapterInterfaceAsync()
+        for i in range(self.MAX_SCANNER_IF):
+            iface = '/org/bluez/hci' + str(i)
+            logger.debug(f"try connect to {iface}")
+            try:
+                adapter._connect('org.bluez', iface, bus=self.dbus)
+                logger.debug(f"connected to {iface}")
+                adapter_introspect = DbusIntrospectableAsync()
+                adapter_introspect._connect('org.bluez', iface, bus=self.dbus)
+                self.iface = iface
+                self.adapter = adapter
+                self.adapter_introspect = adapter_introspect
+                return
+            except Exception as e:
+                logger.error(e)
+        raise Exception("no adapter is available")
+
+    async def _start_discovery(self):
+        global scan_seconds
+        logger.debug(f"Starting discovery... {self.adapter}")
+        assert not self.discovery_running
+        await self.adapter.start_discovery()
+        self.discovery_running = True
+
+        logger.debug(f"Task to stop discovery has got created.")
+        asyncio.create_task(self._find_devices())
+        asyncio.create_task(self._stop_discovery())
+
+    async def _matches(self, dev, filters):
+        """
+        Check if the found BLE device matches the filters Scratch specifies.
+        """
+        logger.debug(f"in matches {dev} {filters}")
+        for f in filters:
+            if 'services' in f:
+                for s in f['services']:
+                    logger.debug(f"service to check: {s}")
+                    given_uuid = s
+                    logger.debug(f"given UUID: {given_uuid} hash={UUID(given_uuid).__hash__()}")
+                    dev_uuids = await dev.uuids
+                    if not dev_uuids:
+                        continue
+                    for u in dev_uuids:
+                        logger.debug(f"dev UUID: {u} hash={u.__hash__()}")
+                        logger.debug(given_uuid == u)
+                        if given_uuid == u:
+                            logger.debug("match...")
+                            return True
+            if 'namePrefix' in f:
+                logger.debug(f"given namePrefix: {f['namePrefix']}")
+                deviceName = await dev.name
+                if deviceName:
+                    logger.debug(f"name: {deviceName}")
+                    if deviceName.startswith(f['namePrefix']):
+                        logger.debug(f"match...")
+                        return True
+            if 'name' in f or 'manufactureData' in f:
+                logger.error("name/manufactureData filters not implemented")
+                # TODO: implement other filters defined:
+                # ref: https://github.com/LLK/scratch-link/blob/develop/Documentation/BluetoothLE.md
+        return False
+
+    async def _find_devices(self) -> None:
+        assert self.discovery_running
+        while self.discovery_running:
+            await sleep(1)
+            s = await self.adapter_introspect.dbus_introspect()
+            parser = ET.fromstring(s)
+            nodes = parser.findall("./node")
+            if not nodes:
+                logger.info("device not found")
+                continue
+            logger.debug(f"{len(nodes)} device(s) found")
+            for node in nodes:
+                node_name = node.attrib['name']
+                logger.debug(f"  {node_name}")
+                devpath = self.iface + "/" + node_name
+                device = DeviceInterfaceAsync()
+                device._connect('org.bluez', devpath, bus=self.dbus)
+                if not await self._matches(device, self.discover_filters):
+                    continue
+                if BLEDBusSession.found_devices.get(node_name):
+                    continue
+                BLEDBusSession.found_devices[node_name] = device
+                params = { 'rssi': -80, 'name': 'Unknown' }
+                try:
+                    params['rssi'] = await device.rssi
+                except Exception:
+                    None
+                try:
+                    params['name'] = await device.name
+                except Exception:
+                    None
+                params['peripheralId'] = node_name
+                await self._send_notification('didDiscoverPeripheral', params)
+        logger.debug("end _find_device.")
+
+    async def _stop_discovery(self) -> None:
+        assert self.discovery_running
+        logger.debug(f"Wait discovery for {scan_seconds} seconds")
+        await sleep(scan_seconds)
+        logger.debug(f"Stopping discovery... {self.adapter}")
+        self.discovery_running = False
+        await self.adapter.stop_discovery()
+
+    def __init__(self, websocket, loop):
+        super().__init__(websocket, loop)
+        logger.debug("dbus init")
+        self.status = self.INITIAL
+        self.dbus = sd_bus_open_system()
+        self.discovery_running = False
+        self._connect_to_adapters()
+
+    def handle_request(self, method, params):
+        logger.debug("handle request")
+
+    async def async_handle_request(self, method, params):
+        logger.debug(f"async handle request: {method} {params}")
+
+        res = { "jsonrpc": "2.0" }
+        err_msg = None
+
+        if self.status == self.INITIAL and method == 'discover':
+            self.discover_filters = params['filters']
+            logger.debug(f"discover: {self.discover_filters}")
+            try:
+                await self._start_discovery()
+                logger.debug(f"discover started: {self.discover_filters}")
+                res["result"] = None
+                self.status = self.DISCOVERY
+            except e:
+                res["error"] = { "message": "Failed to start device discovery" }
+                self.status = self.DONE
+
+        elif self.status == self.DISCOVERY and method == 'connect':
+            logger.debug("connecting to the BLE device")
+            self.device = BLEDBusSession.found_devices[params['peripheralId']]
+            try:
+                logger.debug(f"  {self.device}")
+                await self.device.connect()
+                res["result"] = None
+                self.status = self.CONNECTED
+                logger.info("Connected")
+            except NotImplementedError as e:
+                logger.error(e)
+                res["error"] = { "message": "Failed to connect to device" }
+                self.status = self.DONE
+            except Exception as e:
+                logger.error(f"failed to connect: {e}")
+                res["error"] = { "message": "Failed to connect to device" }
+                self.status = self.DONE
+
+        logger.debug(res)
+        return res
+
+    def end_request(self):
+        logger.debug("end request")
+        return False
+
+    def close(self):
+        logger.debug("close")
+        return
+
 class BLESession(Session):
     """
-    Manage a session for Bluetooth Low Energy device such as micro:bit
+    Manage a session for Bluetooth Low Energy device such as micro:bit using
+    bluepy as backend.
     """
 
     INITIAL = 1
@@ -518,7 +721,8 @@ class BLESession(Session):
         return self.status == self.DONE
 
 async def ws_handler(websocket, path):
-    sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
+    sessionTypes = { '/scratch/bt': BTSession }
+    sessionTypes['/scratch/ble'] = BLEDBusSession if dbus else BLESession
     try:
         logger.info(f"Start session for web socket path: {path}")
         loop = asyncio.get_event_loop()
@@ -546,6 +750,7 @@ def stack_trace():
 def main():
     global scan_seconds
     global scan_retry
+    global dbus
     parser = argparse.ArgumentParser(description='start Scratch-link')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='print debug messages')
@@ -553,6 +758,8 @@ def main():
                         help='specifiy duration to scan BLE devices in seconds')
     parser.add_argument('-r', '--scan_retry', type=int, default=1,
                         help='specifiy retry times to scan BLE devices')
+    parser.add_argument('-b', '--dbus', action='store_true',
+                        help='use DBus backend for BLE devices')
     args = parser.parse_args()
     if args.debug:
         print("Print debug messages")
@@ -561,6 +768,7 @@ def main():
         logger.setLevel(logLevel)
     scan_seconds = args.scan_seconds
     scan_retry = args.scan_retry
+    dbus = args.dbus
     logger.debug(f"set scan_seconds: {scan_seconds}")
     logger.debug(f"set scan_retry: {scan_retry}")
 
