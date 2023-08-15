@@ -102,7 +102,7 @@ Installation
 
 5. For micro:bit, install Scratch-link hex on your device.
 
-    * Download and unzip the [micro:bit Scratch Hex file](https://downloads.scratch.mit.edu/microbit/scratch-microbit-1.1.0.hex.zip).
+    * Download and unzip the [micro:bit Scratch Hex file](https://downloads.scratch.mit.edu/microbit/scratch-microbit.hex.zip).
     * Flash the micro:bit over USB with the Scratch Hex File, you will see the
       five character name of the micro:bit scroll across the screen such as
       'zo9ev'.
