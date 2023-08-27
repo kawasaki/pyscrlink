@@ -10,6 +10,7 @@ import ssl
 import websockets
 import socket
 import json
+import uuid
 import base64
 import logging
 import sys
@@ -43,6 +44,24 @@ logger.propagate = False
 
 HOSTNAME="device-manager.scratch.mit.edu"
 scan_seconds=10.0
+
+class BTUUID(uuid.UUID):
+    BLUETOOTH_BASE_UUID = "00001000800000805F9B34FB"
+
+    def __init__(self, val):
+        if isinstance(val, int):
+            if (val < 0) or (val > 0xFFFFFFFF):
+                raise ValueError(
+                    "Short form UUIDs must be in range 0..0xFFFFFFFF")
+            val = "%04X" % val
+        else:
+            val = str(val)
+
+        val = val.replace("-", "")
+        if len(val) <= 8:  # Short form
+            val = ("0" * (8 - len(val))) + val + self.BLUETOOTH_BASE_UUID
+
+        uuid.UUID.__init__(self, val)
 
 class Session():
     """Base class for BTSession and BLESession"""
