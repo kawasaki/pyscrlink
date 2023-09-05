@@ -446,6 +446,20 @@ class BLEDBusSession(Session):
             if params.get('startNotifications') == True:
                 await self._start_notification(service_id, chara_id, c)
 
+        elif self.status == self.CONNECTED and method == 'write':
+            logger.debug(f"handle write request {params}")
+            service_id = params['serviceId']
+            chara_id = params['characteristicId']
+            c = await self._get_char(chara_id)
+            if params['encoding'] != 'base64':
+                logger.error("encoding other than base 64 is not "
+                             "yet supported: ", params['encoding'])
+            else:
+                msg_bstr = params['message'].encode('ascii')
+                data = base64.standard_b64decode(msg_bstr)
+                await c.write_value(data, {})
+                res['result'] = len(data)
+
         logger.debug(res)
         return res
 
