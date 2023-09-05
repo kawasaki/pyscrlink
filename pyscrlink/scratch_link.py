@@ -34,6 +34,7 @@ from sdbus_async.bluez.gatt_api import (
     GattServiceInterfaceAsync,
 )
 from asyncio import sleep
+from os import dup, fdopen
 
 import threading
 import time
@@ -312,6 +313,8 @@ class BLEDBusSession(Session):
         self.services = {}
         self.chars = {}
         self.chars_cache = {}
+        self.notification_fps = {}
+        self.notification_params = {}
         self._connect_to_adapters()
 
     async def _get_characteristics(self, service_path):
@@ -360,21 +363,38 @@ class BLEDBusSession(Session):
         char = self.chars_cache.get(id)
         if char:
             return char
-        await self._get_services()
-        btuuid = BTUUID(id)
-        for char in self.chars.values():
-            raw_uuid = await char.uuid
-            char_uuid = BTUUID(raw_uuid)
-            if char_uuid == btuuid:
-                self.chars_cache[id] = char
-                return char
-        logger.error(f"Can not get characteristic: {id}")
+        for i in range(5):
+            await self._get_services()
+            btuuid = BTUUID(id)
+            for char in self.chars.values():
+                raw_uuid = await char.uuid
+                char_uuid = BTUUID(raw_uuid)
+                if char_uuid == btuuid:
+                    self.chars_cache[id] = char
+                    return char
+            logger.error(f"Can not get characteristic: {id}. Retry.")
+        logger.error(f"Abandoned to get characteristic: {id}.")
         return None
 
-    async def _start_notification(self, char):
+    async def _start_notification(self, sid, cid, char):
         logger.debug('startNotification')
         (fd, mtu) = await char.acquire_notify({})
-        logger.debug(f'fd={fd}')
+        self.fd = dup(fd)
+        fp = fdopen(self.fd, mode='rb', buffering=0, newline=None)
+        self.notification_fps[self.fd] = fp
+        self.notification_params[self.fd] = { 'serviceId': sid,
+                       'characteristicId': cid,
+                       'encoding': 'base64' }
+        self.loop.add_reader(self.fd, self._read_notification, self.fd)
+        logger.debug(f'added notification reader: fd={self.fd}')
+
+    def _read_notification(self, *args):
+        fd = args[0]
+        fp = self.notification_fps[fd]
+        data = fp.read()
+        params = self.notification_params[fd].copy()
+        params['message'] = base64.standard_b64encode(data).decode('ascii')
+        self.loop.create_task(self._send_notification('characteristicDidChange', params))
 
     def handle_request(self, method, params):
         logger.debug("handle request")
@@ -424,7 +444,7 @@ class BLEDBusSession(Session):
             message = base64.standard_b64encode(value).decode('ascii')
             res['result'] = { 'message': message, 'encode': 'base64' }
             if params.get('startNotifications') == True:
-                await self._start_notification(c)
+                await self._start_notification(service_id, chara_id, c)
 
         logger.debug(res)
         return res
