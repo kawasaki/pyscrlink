@@ -26,21 +26,15 @@ from pyscrlink import bluepy_helper_cap
 import threading
 import time
 import queue
+from asyncio import sleep
 
 # for websockets certificate
 from pyscrlink import gencert
 
-logLevel = logging.INFO
+from pyscrlink import ble
 
 # for logging
-logger = logging.getLogger(__name__)
-formatter = logging.Formatter(fmt='%(asctime)s %(message)s')
-handler = logging.StreamHandler()
-handler.setLevel(logLevel)
-handler.setFormatter(formatter)
-logger.setLevel(logLevel)
-logger.addHandler(handler)
-logger.propagate = False
+logger = logging.getLogger('pyscrlink.scratch_link')
 
 HOSTNAME="device-manager.scratch.mit.edu"
 scan_seconds=10.0
@@ -65,9 +59,10 @@ class BTUUID(uuid.UUID):
 
 class Session():
     """Base class for BTSession and BLESession"""
-    def __init__(self, websocket, loop):
+    def __init__(self, websocket, loop, scan_seconds):
         self.websocket = websocket
         self.loop = loop
+        self.scan_seconds = scan_seconds
         self.lock = threading.RLock()
         self.notification_queue = queue.Queue()
 
@@ -86,7 +81,11 @@ class Session():
         if jsonreq['jsonrpc'] != '2.0':
             logger.error("error: jsonrpc version is not 2.0")
             return True
-        jsonres = self.handle_request(jsonreq['method'], jsonreq['params'])
+        if type(self) is ble.BLEDBusSession:
+            jsonres = await self.async_handle_request(jsonreq['method'],
+                                                      jsonreq['params'])
+        else:
+            jsonres = self.handle_request(jsonreq['method'], jsonreq['params'])
         if 'id' in jsonreq:
             jsonres['id'] = jsonreq['id']
         response = json.dumps(jsonres)
@@ -99,6 +98,10 @@ class Session():
     def handle_request(self, method, params):
         """Default request handler"""
         logger.debug(f"default handle_request: {method}, {params}")
+
+    async def async_handle_request(self, method, params):
+        """Default async request handler"""
+        logger.debug(f"default async handle_request: {method}, {params}")
 
     def end_request(self):
         """
@@ -139,11 +142,17 @@ class Session():
                     break
                 await self._send_notifications()
                 logger.debug("in handle loop")
-            except websockets.ConnectionClosedError as e:
+            except (websockets.ConnectionClosedOK, websockets.ConnectionClosedError) as e:
                 logger.info("scratch closed session")
                 logger.debug(e)
-                self.close()
+                if type(self) is ble.BLEDBusSession:
+                    await self.async_close()
+                else:
+                    self.close()
                 break
+            except Exception as e:
+                t = type(e)
+                logger.info(f"scratch closed with unkown exception: {e}: {t}")
 
     def close(self):
         """
@@ -156,7 +165,8 @@ class BTSession(Session):
 
 class BLESession(Session):
     """
-    Manage a session for Bluetooth Low Energy device such as micro:bit
+    Manage a session for Bluetooth Low Energy device such as micro:bit using
+    bluepy as backend.
     """
 
     INITIAL = 1
@@ -204,6 +214,7 @@ class BLESession(Session):
                     time.sleep(1)
                 elif self.session.status == self.session.CONNECTED:
                     logger.debug("in connected status:")
+
                     delegate = self.session.delegate
                     if delegate and len(delegate.handles) > 0:
                         if not delegate.restart_notification_event.is_set():
@@ -252,8 +263,8 @@ class BLESession(Session):
             params['message'] = base64.standard_b64encode(data).decode('ascii')
             self.session.notify('characteristicDidChange', params)
 
-    def __init__(self, websocket, loop):
-        super().__init__(websocket, loop)
+    def __init__(self, websocket, loop, scan_seconds):
+        super().__init__(websocket, loop, scan_seconds)
         self.status = self.INITIAL
         self.device = None
         self.deviceName = None
@@ -294,7 +305,7 @@ class BLESession(Session):
         """
         Check if the found BLE device matches the filters Scratch specifies.
         """
-        logger.debug(f"in matches {dev.addr} {filters}")
+        logger.debug(f"in matches {dev.address} {filters}")
         for f in filters:
             if 'services' in f:
                 for s in f['services']:
@@ -331,7 +342,6 @@ class BLESession(Session):
         return False
 
     def _scan_devices(self, params):
-        global scan_seconds
         if BLESession.nr_connected > 0:
             return len(BLESession.found_devices) > 0
         found = False
@@ -343,8 +353,8 @@ class BLESession(Session):
                     scanner = Scanner(iface=i)
                     for j in range(scan_retry):
                         try:
-                            logger.debug(f"start BLE scan: {scan_seconds} seconds")
-                            devices = scanner.scan(scan_seconds)
+                            logger.debug(f"start BLE scan: {self.scan_seconds} seconds")
+                            devices = scanner.scan(self.scan_seconds)
                             for dev in devices:
                                 if self.matches(dev, params['filters']):
                                     BLESession.found_devices.append(dev)
@@ -537,11 +547,13 @@ class BLESession(Session):
         return self.status == self.DONE
 
 async def ws_handler(websocket, path):
-    sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
+    global scan_seconds
+    sessionTypes = { '/scratch/bt': BTSession }
+    sessionTypes['/scratch/ble'] = ble.BLEDBusSession if dbus else BLESession
     try:
         logger.info(f"Start session for web socket path: {path}")
         loop = asyncio.get_event_loop()
-        session = sessionTypes[path](websocket, loop)
+        session = sessionTypes[path](websocket, loop, scan_seconds)
         await session.handle()
     except Exception as e:
         logger.error(f"Failure in session for web socket path: {path}")
@@ -565,6 +577,7 @@ def stack_trace():
 def main():
     global scan_seconds
     global scan_retry
+    global dbus
     parser = argparse.ArgumentParser(description='start Scratch-link')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='print debug messages')
@@ -572,14 +585,27 @@ def main():
                         help='specifiy duration to scan BLE devices in seconds')
     parser.add_argument('-r', '--scan_retry', type=int, default=1,
                         help='specifiy retry times to scan BLE devices')
+    parser.add_argument('-b', '--dbus', action='store_true',
+                        help='use DBus backend for BLE devices')
     args = parser.parse_args()
+
+    logLevel = logging.INFO
     if args.debug:
-        print("Print debug messages")
         logLevel = logging.DEBUG
-        handler.setLevel(logLevel)
-        logger.setLevel(logLevel)
+
+    formatter = logging.Formatter(fmt='%(asctime)s %(message)s')
+    handler = logging.StreamHandler()
+    handler.setLevel(logLevel)
+    handler.setFormatter(formatter)
+    logger.setLevel(logLevel)
+    logger.addHandler(handler)
+    logger.propagate = False
+
     scan_seconds = args.scan_seconds
     scan_retry = args.scan_retry
+    dbus = args.dbus
+    if args.debug:
+        logger.debug("Print debug messages")
     logger.debug(f"set scan_seconds: {scan_seconds}")
     logger.debug(f"set scan_retry: {scan_retry}")
 
