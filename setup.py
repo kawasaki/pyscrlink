@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyscrlink",
-    version="0.2.8",
+    version="0.3.0",
     author="Shin'ichiro Kawasaki",
     author_email='kawasaki@juno.dti.ne.jp',
     description='Scratch-link for Linux with Python',
@@ -14,14 +14,14 @@ setuptools.setup(
     url="https://github.com/kawasaki/pyscrlink",
     packages=setuptools.find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX :: Linux",
         ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=[
         'websockets',
-        'bluepy',
+        'bleak',
         'pyOpenSSL',
         ],
     entry_points={

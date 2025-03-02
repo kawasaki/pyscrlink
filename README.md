@@ -9,9 +9,9 @@ micro:bit.
 
 Pyscrlink allows you to connect Scratch and bluetooth devices with the Linux
 OSes. It uses the Linux Bluetooth protocol stack [Bluez](http://www.bluez.org/)
-and [bluepy](https://github.com/IanHarvey/bluepy) to handle Bluetooth Low Energy
+and [bleak](https://github.com/hbldh/bleak) to handle Bluetooth Low Energy
 (BLE) connections. It has been reported that pyscrlink connects Scratch 3.0 with
-micro:bit, LEGO WeDo, LEGO Boost and toio.
+micro:bit, LEGO WeDo, LEGO Boost, Intelino and toio.
 
 Until version v0.2.5, pyscrlink supported Bluetooth Classic protocol using
 [pybluez](https://github.com/pybluez/pybluez). Unfortunately, pybluez is not
@@ -41,6 +41,7 @@ Pyscrlink was confirmed with following devices, Linux distros and browsers.
 
 Devices:
 * micro:bit
+* Intelino trains
 
 Linux distros:
 * Arch Linux
@@ -169,6 +170,10 @@ Please file issues to [GitHub issue tracker](https://github.com/kawasaki/pyscrli
 
 Releases
 --------
+
+Release 0.3.0
+* Added Intelino support
+* [bleak](https://github.com/hbldh/bleak) replaces [bluepy](https://github.com/IanHarvey/bluepy)
 
 Release 0.2.8
 
