@@ -517,17 +517,24 @@ class BLESession(Session):
             self.delegate.restart_notification_event.set()
         return self.status == self.DONE
 
-async def ws_handler(websocket, path):
+async def ws_handler(websocket):
+    try:
+        path = websocket.request.path
+    except AttributeError:
+        path = websocket.path
     sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
     try:
         logger.info(f"Start session for web socket path: {path}")
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         session = sessionTypes[path](websocket, loop)
         await session.handle()
     except Exception as e:
         logger.error(f"Failure in session for web socket path: {path}")
         logger.error(f"{type(e).__name__}: {e}")
-        session.close()
+        # session might not be initialized if sessionTypes lookup fails, but path should be correct from client.
+        # If instantiation fails, session is unbound.
+        if 'session' in locals():
+            session.close()
 
 def stack_trace():
     print("in stack_trace")
@@ -542,6 +549,19 @@ def stack_trace():
 
     for line in code:
          print(line)
+
+async def run_server():
+    # kick start WSS server
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    localhost_cer = gencert.cert_file_path
+    localhost_key = gencert.key_file_path
+    ssl_context.load_cert_chain(localhost_cer, localhost_key)
+
+    async with websockets.serve(
+         ws_handler, HOSTNAME, 20110, ssl=ssl_context
+    ):
+        logger.info("Started scratch-link")
+        await asyncio.get_running_loop().create_future()
 
 def main():
     global scan_seconds
@@ -567,21 +587,9 @@ def main():
     # Prepare certificate of the WSS server
     gencert.prep_cert()
 
-    # kick start WSS server
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    localhost_cer = gencert.cert_file_path
-    localhost_key = gencert.key_file_path
-    ssl_context.load_cert_chain(localhost_cer, localhost_key)
-
-    start_server = websockets.serve(
-         ws_handler, HOSTNAME, 20110, ssl=ssl_context
-    )
-
     while True:
         try:
-            asyncio.get_event_loop().run_until_complete(start_server)
-            logger.info("Started scratch-link")
-            asyncio.get_event_loop().run_forever()
+            asyncio.run(run_server())
         except KeyboardInterrupt as e:
             stack_trace()
             break
