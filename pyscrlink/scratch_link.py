@@ -19,7 +19,7 @@ import argparse
 
 # for BLESession (e.g. BBC micro:bit)
 from bluepy.btle import Scanner, UUID, Peripheral, DefaultDelegate, ScanEntry
-from bluepy.btle import BTLEDisconnectError, BTLEManagementError
+from bluepy.btle import BTLEDisconnectError, BTLEManagementError, BTLEException
 from pyscrlink import bluepy_helper_cap
 
 import threading
@@ -67,7 +67,22 @@ class Session():
         if jsonreq['jsonrpc'] != '2.0':
             logger.error("error: jsonrpc version is not 2.0")
             return True
-        jsonres = self.handle_request(jsonreq['method'], jsonreq['params'])
+        try:
+            jsonres = self.handle_request(jsonreq['method'], jsonreq['params'])
+        except Exception as e:
+            try:
+                # Ensure we disconnect cleanly on handler exceptions.
+                self.close()
+            except Exception:
+                pass
+            # Convert to JSON-RPC error so Scratch gets a response instead of the whole session crashing.
+            jsonres = { "jsonrpc": "2.0", "error": { "message": f"{type(e).__name__}: {e}" } }
+            # End this session to avoid leaving bluepy-helper in a bad state.
+            try:
+                if hasattr(self, "status"):
+                    self.status = getattr(self, "DONE", getattr(self, "status"))
+            except Exception:
+                pass
         if 'id' in jsonreq:
             jsonres['id'] = jsonreq['id']
         response = json.dumps(jsonres)
@@ -120,6 +135,7 @@ class Session():
                     break
                 await self._send_notifications()
                 logger.debug("in handle loop")
+                await asyncio.sleep(0.01)
             except websockets.ConnectionClosedError as e:
                 logger.info("scratch closed session")
                 logger.debug(e)
@@ -204,7 +220,7 @@ class BLESession(Session):
                         time.sleep(0.0)
                     # To avoid repeated lock by this single thread,
                     # yield CPU to other lock waiting threads.
-                    time.sleep(0)
+                    time.sleep(0.01)
                 else:
                     # Nothing to do:
                     time.sleep(0)
@@ -262,19 +278,22 @@ class BLESession(Session):
         self.close()
 
     def _get_dev_uuids(self, dev):
+        uuids = []
         for adtype in self.SERVICE_CLASS_UUID_ADTYPES:
             service_class_uuids = dev.getValue(adtype)
             if service_class_uuids:
                 for u in service_class_uuids:
-                    a = self.SERVICE_CLASS_UUID_ADTYPES[adtype]
-                    logger.debug(f"service class uuid for {a}/{adtype}: {u}")
-                return service_class_uuids
-        return None
+                    # logger.debug(f"service class uuid for {self.SERVICE_CLASS_UUID_ADTYPES[adtype]}/{adtype}: {u}")
+                    uuids.append(u)
+        return uuids
 
     def matches(self, dev, filters):
         """
         Check if the found BLE device matches the filters Scratch specifies.
         """
+        if not filters:
+            return True
+
         logger.debug(f"in matches {dev.addr} {filters}")
         for f in filters:
             if 'services' in f:
@@ -317,28 +336,36 @@ class BLESession(Session):
             return len(BLESession.found_devices) > 0
         found = False
         with BLESession.scan_lock:
-            if not BLESession.scan_started:
+            # If a previous scan attempt failed, scan_started might remain True
+            # while found_devices is empty. In that case, force a new scan.
+            should_scan = (not BLESession.scan_started) or (len(BLESession.found_devices) == 0)
+            if should_scan:
                 BLESession.scan_started = True
                 BLESession.found_devices.clear()
                 for i in range(self.MAX_SCANNER_IF):
                     scanner = Scanner(iface=i)
                     for j in range(scan_retry):
+                        devices = []
+                        scan_err = None
                         try:
                             logger.debug(f"start BLE scan: {scan_seconds} seconds")
                             devices = scanner.scan(scan_seconds)
-                            for dev in devices:
-                                if self.matches(dev, params['filters']):
-                                    BLESession.found_devices.append(dev)
-                                    found = True
-                                    logger.debug(f"BLE device found with iface #{i}");
-                            if found:
-                                break
-                        except BTLEDisconnectError as de:
-                            logger.debug(f"BLE iface #{i}: {de}");
-                        except BTLEManagementError as me:
-                            logger.debug(f"BLE iface #{i}: {me}");
+                        except Exception as e:
+                            scan_err = e
+                            logger.debug(f"BLE iface #{i}: {e}");
+                        for dev in devices:
+                            if self.matches(dev, params['filters']):
+                                BLESession.found_devices.append(dev)
+                                found = True
+                                logger.debug(f"BLE device found with iface #{i}");
+                        if found:
+                            break
                     if found:
                         break
+                # If the scan did not find anything (including due to errors),
+                # allow a future discover() to try scanning again.
+                if not found and len(BLESession.found_devices) == 0:
+                    BLESession.scan_started = False
             else:
                 found = len(BLESession.found_devices) > 0
         return found
@@ -357,8 +384,14 @@ class BLESession(Session):
     def _cache_characteristics(self):
         if not self.perip:
             return
-        with self.lock:
-            self.characteristics_cache = self.perip.getCharacteristics()
+        try:
+            with self.lock:
+                self.characteristics_cache = self.perip.getCharacteristics()
+        except BTLEException as e:
+            # bluepy-helper can enter bad state transiently; don't crash the session just for caching.
+            logger.error(f"Failed to cache characteristics: {e}")
+            logger.debug(traceback.format_exc())
+            self.characteristics_cache = []
         if not self.characteristics_cache:
             logger.debug("Characteristics are not cached")
 
@@ -384,7 +417,6 @@ class BLESession(Session):
         logger.debug(method)
         if len(params) > 0:
             logger.debug(params)
-
         res = { "jsonrpc": "2.0" }
         err_msg = None
 
@@ -421,14 +453,24 @@ class BLESession(Session):
             logger.debug("connecting to the BLE device")
             self.device = BLESession.found_devices[params['peripheralId']]
             self.deviceName = self.device.getValueText(0x9) or self.device.getValueText(0x8)
+            connect_err = None
             try:
                 self.perip = Peripheral(self.device)
                 logger.info(f"connected to the BLE peripheral: {self.deviceName}")
                 BLESession.found_devices.remove(self.device)
-            except BTLEDisconnectError as e:
+            except Exception as e:
+                connect_err = e
                 logger.error(f"failed to connect to the BLE device \"{self.deviceName}\": {e}")
+                logger.debug(traceback.format_exc())
                 self.status = self.DONE
-
+            if connect_err is not None:
+                # A failed connect can leave us with a stale ScanEntry; allow a fresh scan next time.
+                try:
+                    if self.device in BLESession.found_devices:
+                        BLESession.found_devices.remove(self.device)
+                except Exception:
+                    pass
+                BLESession.scan_started = False
             if self.perip:
                 res["result"] = None
                 self.status = self.CONNECTED
@@ -436,7 +478,12 @@ class BLESession(Session):
                 logger.debug(f"BLE session connected={BLESession.nr_connected}")
                 self.delegate = self.BLEDelegate(self)
                 self.perip.withDelegate(self.delegate)
-                self._cache_characteristics()
+                try:
+                    self._cache_characteristics()
+                except Exception as e:
+                    # Never let caching crash a newly connected session.
+                    logger.error(f"cache_characteristics failed after connect: {type(e).__name__}: {e}")
+                    logger.debug(traceback.format_exc())
             else:
                 err_msg = f"BLE connect failed: {self.deviceName}"
                 res["error"] = { "message": err_msg }
@@ -486,7 +533,12 @@ class BLESession(Session):
                 data = base64.standard_b64decode(msg_bstr)
                 logger.debug("getting lock for c.write()")
                 with self.lock:
-                    c.write(data)
+                    try:
+                        # LPF2/WeDo hubs often expect write-with-response; this can also help bluepy stay in sync.
+                        c.write(data, withResponse=True)
+                    except BTLEException as e:
+                        self.status = self.DONE
+                        raise
                 logger.debug("released lock for c.write()")
                 res['result'] = len(data)
 
@@ -517,17 +569,25 @@ class BLESession(Session):
             self.delegate.restart_notification_event.set()
         return self.status == self.DONE
 
-async def ws_handler(websocket, path):
+async def ws_handler(websocket):
+    try:
+        path = websocket.request.path
+    except AttributeError:
+        path = websocket.path
     sessionTypes = { '/scratch/ble': BLESession, '/scratch/bt': BTSession }
     try:
         logger.info(f"Start session for web socket path: {path}")
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         session = sessionTypes[path](websocket, loop)
         await session.handle()
     except Exception as e:
         logger.error(f"Failure in session for web socket path: {path}")
         logger.error(f"{type(e).__name__}: {e}")
-        session.close()
+        logger.error(traceback.format_exc())
+        # session might not be initialized if sessionTypes lookup fails, but path should be correct from client.
+        # If instantiation fails, session is unbound.
+        if 'session' in locals():
+            session.close()
 
 def stack_trace():
     print("in stack_trace")
@@ -542,6 +602,19 @@ def stack_trace():
 
     for line in code:
          print(line)
+
+async def run_server():
+    # kick start WSS server
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    localhost_cer = gencert.cert_file_path
+    localhost_key = gencert.key_file_path
+    ssl_context.load_cert_chain(localhost_cer, localhost_key)
+
+    async with websockets.serve(
+         ws_handler, HOSTNAME, 20110, ssl=ssl_context
+    ):
+        logger.info("Started scratch-link")
+        await asyncio.get_running_loop().create_future()
 
 def main():
     global scan_seconds
@@ -567,21 +640,9 @@ def main():
     # Prepare certificate of the WSS server
     gencert.prep_cert()
 
-    # kick start WSS server
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    localhost_cer = gencert.cert_file_path
-    localhost_key = gencert.key_file_path
-    ssl_context.load_cert_chain(localhost_cer, localhost_key)
-
-    start_server = websockets.serve(
-         ws_handler, HOSTNAME, 20110, ssl=ssl_context
-    )
-
     while True:
         try:
-            asyncio.get_event_loop().run_until_complete(start_server)
-            logger.info("Started scratch-link")
-            asyncio.get_event_loop().run_forever()
+            asyncio.run(run_server())
         except KeyboardInterrupt as e:
             stack_trace()
             break
