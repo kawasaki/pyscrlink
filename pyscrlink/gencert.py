@@ -5,7 +5,10 @@ import shutil
 import sys
 import os
 import re
-from OpenSSL import crypto
+import datetime
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 import logging
 logLevel = logging.INFO
@@ -53,26 +56,48 @@ def gen_cert(cert_path, key_path):
         else:
             logger.info(f"Certificate {cert_path} expired. Regenerate it.")
 
-    key = crypto.PKey()
-    key.generate_key(crypto.TYPE_RSA, 2048)
+    # Generate the RSA private key.
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
-    cert = crypto.X509()
-    cert.get_subject().CN = SCRATCH_CERT_NICKNAME
-    cert.gmtime_adj_notBefore(9)
-    cert.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)  # ten years
-    cert.set_version(2) # version 3 of X.509 (0 start)
-    cert.set_pubkey(key)
-    cert.set_issuer(cert.get_subject())
-    cert.add_extensions([
-        crypto.X509Extension(b"subjectAltName", False,
-                             b"DNS:device-manager.scratch.mit.edu")
+    # Use the same subject and issuer for the self-signed certificate.
+    subject = issuer = x509.Name([
+        x509.NameAttribute(x509.NameOID.COMMON_NAME, SCRATCH_CERT_NICKNAME)
     ])
-    cert.sign(key, 'sha256')
 
+    # Use timezone-aware datetime objects for the validity dates.
+    now = datetime.datetime.now(datetime.timezone.utc)
+    not_before = now + datetime.timedelta(seconds=9)
+    not_after = now + datetime.timedelta(days=10 * 365)  # ten years
+
+    # Build and sign the X.509 certificate.
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(not_before)
+        .not_valid_after(not_after)
+        .add_extension(
+            x509.SubjectAlternativeName([
+                x509.DNSName(SCRATCH_CERT_NICKNAME)
+            ]),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+
+    # Save the certificate and key in PEM format.
     with open(cert_path, "wb") as cf:
-        cf.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+        cf.write(cert.public_bytes(serialization.Encoding.PEM))
     with open(key_path, "wb") as kf:
-        kf.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
+        kf.write(
+            key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+        )
 
     logger.info(f"Generated certificate: {cert_path}")
     logger.info(f"Generated key: {key_path}")
@@ -96,10 +121,19 @@ def is_cert_valid(cert_path):
     """
     Check if the certificate at specified path is valid
     """
-    with open(cert_path, "rb") as cf:
-        cbarr = cf.read()
-        cert = crypto.load_certificate(crypto.FILETYPE_PEM, cbarr)
-    return not cert.has_expired()
+    try:
+        with open(cert_path, "rb") as cf:
+            cbarr = cf.read()
+            # Load the PEM encoded certificate
+            cert = x509.load_pem_x509_certificate(cbarr)
+
+        # Check if the certificate has not expired yet.
+        now = datetime.datetime.now(datetime.timezone.utc)
+        return now < cert.not_valid_after_utc
+
+    except Exception:
+        # Returns False if the file doesn't exist, is corrupted, or fails to parse
+        return False
 
 def has_cert(dir, cert, nickname):
     """
@@ -159,7 +193,7 @@ def prep_cert_for_app(cert, app, search_path):
     nssdb = None
     for root, dirs, files in os.walk(os.path.join(homedir, search_path)):
         for name in files:
-            if not re.match("key.*\.db", name):
+            if not re.match(r"key.*\.db", name):
                 continue
             nssdb = root
             if prep_nss_cert(nssdb, cert, SCRATCH_CERT_NICKNAME):

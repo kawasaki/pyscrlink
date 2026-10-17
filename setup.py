@@ -22,7 +22,7 @@ setuptools.setup(
     install_requires=[
         'websockets',
         'bluepy',
-        'pyOpenSSL',
+        'cryptography>=42.0.0',
         ],
     entry_points={
         'console_scripts': [

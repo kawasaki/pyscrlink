@@ -1,4 +1,4 @@
 websockets
 bluepy
 pybluez
-pyOpenSSL
+cryptography>=42.0.0
